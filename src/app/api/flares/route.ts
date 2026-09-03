@@ -1,0 +1,5 @@
+import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
+import { getFlareRows } from "@/lib/data";
+const schema=z.object({area:z.enum(["state","lga","cluster","block","company","onshore_offshore"]).default("state"),period:z.string().regex(/^\d{4}-\d{2}$/).optional(),name:z.string().optional(),limit:z.coerce.number().int().min(1).max(5000).default(1000),offset:z.coerce.number().int().min(0).default(0)});
+export async function GET(request:NextRequest){const parsed=schema.safeParse(Object.fromEntries(request.nextUrl.searchParams));if(!parsed.success)return NextResponse.json({error:"Invalid query",details:parsed.error.flatten()},{status:400});const {area,period,name,limit,offset}=parsed.data;const rows=(await getFlareRows(area)).filter(row=>(!period||row.month===period)&&(!name||row.name.toLowerCase().includes(name.toLowerCase())));return NextResponse.json({data:rows.slice(offset,offset+limit),meta:{total:rows.length,limit,offset,area,period:period??null,coverageNote:area==="company"?"Company observations end in October 2020.":"An absent row is not converted to zero."}})}

@@ -1,0 +1,4 @@
+import { describe, expect, it } from "vitest";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+describe("validated snapshots",()=>{it("deduplicates the two identical spill sources",async()=>{const metadata=JSON.parse(await readFile(join(process.cwd(),"data/snapshots/metadata.json"),"utf8"));expect(metadata.spillMirrorAgreement).toBe(true);expect(metadata.sources.spillsPrimary.sha256).toBe(metadata.sources.spillsMirror.sha256)});it("keeps the known 2026 spill and company coverage boundary",async()=>{const spills=JSON.parse(await readFile(join(process.cwd(),"data/snapshots/spillsPrimary.json"),"utf8"));const companies=JSON.parse(await readFile(join(process.cwd(),"data/snapshots/flareCompany.json"),"utf8"));expect(spills.some((row:{incidentnumber?:string})=>row.incidentnumber==="193897")).toBe(true);expect(companies.map((row:{month:string|null})=>row.month).filter(Boolean).sort().at(-1)).toBe("2020-10")})});

@@ -1,0 +1,8 @@
+import type {Metadata} from "next";
+import Link from "next/link";
+import { ArrowRight, MapPin } from "lucide-react";
+import { SourceRail } from "@/components/ui";
+import { flarePeriod, getGeo, getMetadata } from "@/lib/data";
+import { formatVolume, slugify } from "@/lib/format";
+export const metadata:Metadata={title:"Places"};
+export default async function PlacesPage(){const [states,flares,metadata]=await Promise.all([getGeo("states"),flarePeriod("state"),getMetadata()]);const values=new Map(flares.map(row=>[row.name.toLowerCase(),row]));const names=states.features.map(feature=>String(feature.properties.admin1name??feature.properties.name??"")).filter(Boolean).sort();return <><section className="page-hero"><div className="container"><span className="eyebrow">Place profiles</span><h1>Understand the records by state</h1><p>Open a Nigerian state to see spill records and state-level flaring side by side, while keeping the two datasets and their dates distinct.</p></div></section><SourceRail label="State boundaries + source-backed records" observation="2026-05" retrieved={metadata.retrievedAt}/><div className="container page-pad"><div className="card-grid">{names.map(name=>{const flare=values.get(name.toLowerCase());return <Link className="card interactive" href={`/places/states/${slugify(name)}`} key={name}><div className="card-icon"><MapPin size={20}/></div><h3>{name}</h3><p>{flare?`${formatVolume(flare.mscf)} detected in the state aggregation for May 2026.`:"No flaring detected by the tracker for May 2026."}</p><div className="card-meta"><span>{flare?"Tracker row supplied":"No period row supplied"}</span><ArrowRight size={15}/></div></Link>})}</div></div></>}

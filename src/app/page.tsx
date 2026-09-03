@@ -1,65 +1,286 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, Database, Flame, Map, Search, Waves } from "lucide-react";
+import { NigeriaMap } from "@/components/map";
+import {
+  flarePeriod,
+  getGeo,
+  getLatestSpills,
+  getMetadata,
+  getSpills,
+  spillCoordinates,
+} from "@/lib/data";
+import {
+  formatDate,
+  formatNumber,
+  formatVolume,
+  numberOrNull,
+  spillPath,
+  stateCodes,
+} from "@/lib/format";
+import { SectionHeading, SourceRail } from "@/components/ui";
+import type { MapPoint } from "@/types/domain";
 
-export default function Home() {
+export default async function Home() {
+  const [metadata, latestSpills, allSpills, stateFlares, states] =
+    await Promise.all([
+      getMetadata(),
+      getLatestSpills(180),
+      getSpills(),
+      flarePeriod("state"),
+      getGeo("states"),
+    ]);
+  const spills2026 = allSpills.filter((row) =>
+    row.incidentdate?.startsWith("2026"),
+  );
+  const mappedSpills: MapPoint[] = latestSpills.flatMap((row) => {
+    const c = spillCoordinates(row);
+    return c
+      ? [
+          {
+            id: row.id,
+            ...c,
+            title: `Spill ${row.incidentnumber ?? row.id}`,
+            subtitle: row.sitelocationname,
+            kind: "spill" as const,
+            href: spillPath(row.id),
+          },
+        ]
+      : [];
+  });
+  const flarePoints: MapPoint[] = stateFlares.flatMap((row) => {
+    const lat = numberOrNull(row.y),
+      lng = numberOrNull(row.x);
+    return lat !== null && lng !== null
+      ? [
+          {
+            id: `flare-${row.name}`,
+            lat,
+            lng,
+            title: `${row.name} State`,
+            subtitle: `${formatVolume(row.mscf)} · May 2026`,
+            kind: "flare" as const,
+            href: `/places/states/${row.name.toLowerCase().replace(/\s+/g, "-")}`,
+          },
+        ]
+      : [];
+  });
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <>
+      <SourceRail
+        label="Sources checked · NOSDRA + Nigeria Gas Flare Tracker"
+        observation="2026-08-23"
+        retrieved={metadata.retrievedAt}
+      />
+      <section className="hero home-hero">
+        <div className="home-hero-grid">
+          <div className="home-hero-copy">
+            <span className="eyebrow">Nigeria · Open environmental data</span>
+            <h1>
+              See what Nigeria&apos;s environmental records actually show.
+            </h1>
+            <p>
+              Explore oil-spill records and monthly gas-flare estimates with
+              every source, date and limitation kept visible.
+            </p>
+            <form className="hero-search" action="/search">
+              <Search
+                size={19}
+                color="#607077"
+                style={{ margin: "12px 0 0 10px" }}
+              />
+              <input
+                name="q"
+                aria-label="Search Nigeria environmental records"
+                placeholder="Search a place, spill record or oil block…"
+              />
+              <button>Search</button>
+            </form>
+            <div className="hero-actions">
+              <Link className="button" href="/explore">
+                <Map size={17} />
+                Explore Nigeria
+              </Link>
+              <Link className="button secondary" href="/oil-spills">
+                Browse oil-spill records
+                <ArrowRight size={17} />
+              </Link>
+            </div>
+            <div className="home-stats">
+              <div>
+                <strong>
+                  {formatNumber(metadata.sources.spillsPrimary.count)}
+                </strong>
+                <span>spill records in current retrieval</span>
+              </div>
+              <div>
+                <strong>{formatNumber(spills2026.length)}</strong>
+                <span>valid 2026 incident dates</span>
+              </div>
+              <div>
+                <strong>{formatNumber(flarePoints.length)}</strong>
+                <span>states with flare detections in May 2026</span>
+              </div>
+            </div>
+          </div>
+          <div className="home-map">
+            <NigeriaMap
+              points={[...mappedSpills, ...flarePoints]}
+              polygons={states}
+              height={570}
+              center={[5.3, 6.3]}
+              zoom={7}
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+            <div className="map-choice">
+              <span className="eyebrow">Choose what to explore</span>
+              <Link href="/oil-spills">
+                <i className="spill-dot" />
+                Oil-spill records
+                <ArrowRight size={14} />
+              </Link>
+              <Link href="/gas-flares">
+                <i className="flare-dot" />
+                Gas-flare estimates
+                <ArrowRight size={14} />
+              </Link>
+              <Link href="/places">
+                <Map size={13} />
+                Places across Nigeria
+                <ArrowRight size={14} />
+              </Link>
+            </div>
+          </div>
         </div>
-      </main>
-    </div>
+      </section>
+      <section className="section">
+        <div className="container">
+          <SectionHeading title="Start with the question you have" />
+          <div className="card-grid">
+            <Link className="card interactive" href="/oil-spills">
+              <div className="card-icon">
+                <Waves size={21} />
+              </div>
+              <h3>Where have spills been recorded?</h3>
+              <p>
+                Map and search every oil-spill record with source fields and
+                official evidence links.
+              </p>
+              <div className="card-meta">
+                <span>NOSDRA records</span>
+                <ArrowRight size={16} />
+              </div>
+            </Link>
+            <Link className="card interactive" href="/gas-flares">
+              <div className="card-icon">
+                <Flame size={21} />
+              </div>
+              <h3>Where has flaring been detected?</h3>
+              <p>
+                Compare state, LGA, cluster, block and onshore/offshore
+                estimates independently.
+              </p>
+              <div className="card-meta">
+                <span>Through May 2026</span>
+                <ArrowRight size={16} />
+              </div>
+            </Link>
+            <Link className="card interactive" href="/places">
+              <div className="card-icon">
+                <Map size={21} />
+              </div>
+              <h3>What do the sources say about a place?</h3>
+              <p>
+                Separate spill and flare views for any Nigerian state, with
+                every time period identified.
+              </p>
+              <div className="card-meta">
+                <span>State profiles</span>
+                <ArrowRight size={16} />
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+      <section className="section alt">
+        <div className="container">
+          <SectionHeading
+            eyebrow="Latest oil spill records"
+            title="Recent reports from the source"
+            body="Dates below are observation dates in the dataset, not the date this website retrieved the data."
+            action={{ label: "See all oil spills", href: "/oil-spills" }}
+          />
+          <div className="panel record-list">
+            {latestSpills.slice(0, 5).map((spill) => (
+              <Link
+                className="record-row"
+                key={spill.id}
+                href={`/oil-spills/${spill.incidentnumber ?? spill.id}`}
+              >
+                <time>
+                  {formatDate(spill.incidentdate, {
+                    day: "2-digit",
+                    month: "short",
+                    year: "numeric",
+                  })}
+                </time>
+                <div>
+                  <strong>
+                    {spill.sitelocationname ?? "Location not supplied"}
+                  </strong>
+                  <p>
+                    {spill.company ?? "Company not supplied"} ·{" "}
+                    {spill.lga ?? "LGA not supplied"},{" "}
+                    {stateCodes[spill.statesaffected ?? ""] ??
+                      spill.statesaffected ??
+                      "State not supplied"}
+                  </p>
+                </div>
+                <span className="status">{spill.status ?? "Recorded"}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+      <section className="section">
+        <div className="container">
+          <SectionHeading
+            eyebrow="Understand the data"
+            title="Know exactly what each number means"
+            body="We preserve source gaps, distinguish observation dates from retrieval dates, and explain why some geographic or historical views are limited."
+          />
+          <div className="card-grid">
+            <div className="card">
+              <div className="card-icon">
+                <Database size={21} />
+              </div>
+              <h3>Source-backed</h3>
+              <p>
+                Every major view identifies the public endpoint and its latest
+                available observation.
+              </p>
+            </div>
+            <div className="card">
+              <div className="card-icon">
+                <Flame size={21} />
+              </div>
+              <h3>Geographies stay separate</h3>
+              <p>
+                A state is not a block or a cluster. Comparisons are made within
+                the selected geography level.
+              </p>
+            </div>
+            <div className="card">
+              <div className="card-icon">
+                <Search size={21} />
+              </div>
+              <h3>Missing stays missing</h3>
+              <p>
+                Unknown quantities and absent fields are labelled clearly. They
+                are never silently converted to zero.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
   );
 }

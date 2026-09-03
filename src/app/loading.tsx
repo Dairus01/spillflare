@@ -1,0 +1,1 @@
+export default function Loading(){return <div className="container page-pad"><div className="skeleton" style={{height:72,width:"54%",marginBottom:24}}/><div className="skeleton" style={{height:520}}/></div>}

@@ -1,0 +1,2 @@
+"use client";
+export default function ErrorPage({reset}:{reset:()=>void}){return <div className="container page-pad"><span className="eyebrow">Temporary problem</span><h1 style={{fontSize:48}}>The record view could not be loaded.</h1><p style={{color:"var(--slate)"}}>The validated local snapshot is still intact. Try the page again.</p><button className="button" onClick={reset}>Try again</button></div>}

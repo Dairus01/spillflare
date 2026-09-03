@@ -1,0 +1,8 @@
+import Link from "next/link";
+import { ArrowRight, CircleAlert, Database, Radio } from "lucide-react";
+import { formatDate } from "@/lib/format";
+export function SourceRail({ label, observation, retrieved, compact = false }: { label: string; observation?: string | null; retrieved?: string | null; compact?: boolean }) { const observationFormat:Intl.DateTimeFormatOptions=observation?.length===10?{day:"numeric",month:"short",year:"numeric"}:{month:"short",year:"numeric"};return <div className={compact ? "source-rail compact" : "source-rail"}><span><Radio size={14} /> {label}</span>{observation && <span>Latest observation: <b>{formatDate(observation, observationFormat)}</b></span>}{retrieved && <span>Retrieved: <b>{formatDate(retrieved.slice(0, 10))}</b></span>}</div>; }
+export function SectionHeading({ eyebrow, title, body, action }: { eyebrow?: string; title: string; body?: string; action?: { label: string; href: string } }) { return <div className="section-heading"><div>{eyebrow && <span className="eyebrow">{eyebrow}</span>}<h2>{title}</h2>{body && <p>{body}</p>}</div>{action && <Link className="text-link" href={action.href}>{action.label}<ArrowRight size={16} /></Link>}</div>; }
+export function DataNote({ children }: { children: React.ReactNode }) { return <div className="data-note"><CircleAlert size={18} /><div>{children}</div></div>; }
+export function EmptyState({ title, body }: { title: string; body: string }) { return <div className="empty-state"><Database size={28} /><h3>{title}</h3><p>{body}</p></div>; }
+export function Metric({ label, value, detail }: { label: string; value: string; detail?: string }) { return <div className="metric"><span>{label}</span><strong>{value}</strong>{detail && <small>{detail}</small>}</div>; }

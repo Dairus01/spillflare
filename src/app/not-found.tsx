@@ -1,0 +1,2 @@
+import Link from "next/link";
+export default function NotFound(){return <div className="container page-pad"><span className="eyebrow">404 · Record not found</span><h1 style={{fontSize:54,letterSpacing:"-.05em"}}>This page is outside the monitored area.</h1><p style={{color:"var(--slate)",maxWidth:650}}>The URL may be incorrect, or the requested source record may not exist in the latest validated snapshot.</p><div className="button-row"><Link className="button" href="/explore">Explore records</Link><Link className="button ghost" href="/search">Search</Link></div></div>}

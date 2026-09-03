@@ -1,0 +1,2 @@
+import type { MetadataRoute } from "next";
+export default function sitemap(): MetadataRoute.Sitemap { const base=process.env.NEXT_PUBLIC_SITE_URL??"http://localhost:3000"; return ["","/explore","/oil-spills","/oil-spills/analytics","/gas-flares","/gas-flares/companies","/places","/search","/data-and-methods","/about","/help"].map(path=>({url:`${base}${path}`,lastModified:new Date(),changeFrequency:path===""?"daily":"weekly",priority:path===""?1:.8})); }

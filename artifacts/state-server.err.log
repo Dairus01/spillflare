@@ -1,0 +1,4 @@
+⨯ Error: The destination stream closed early.
+    at ignore-listed frames {
+  digest: '1542781450'
+}
