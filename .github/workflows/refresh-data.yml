@@ -34,6 +34,9 @@ jobs:
       - name: Refresh source snapshots
         run: npm run sync:data
 
+      - name: Notify IndexNow
+        run: npm run indexnow
+
       - name: Commit refreshed snapshots
         run: |
           git config user.name "github-actions[bot]"

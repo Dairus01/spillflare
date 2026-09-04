@@ -17,6 +17,8 @@ The bottom-right assistant answers only from the public NOSDRA and Nigeria Gas F
 
 The checked-in `data/snapshots` directory is a last-known-good fallback. Live retrieval and observation recency are shown separately throughout the interface.
 
+IndexNow is configured for Bing and other participating search engines. The verification key is publicly available at `/ff555e0637c84d7fb9d9e80b9739481c.txt`, and the refresh workflow submits the main canonical pages after each data refresh. IndexNow does not replace Google Search Console submission.
+
 ## Verification
 
 - `npm run lint`
