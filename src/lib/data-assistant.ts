@@ -212,7 +212,7 @@ export async function findGasFlares(input: {
     getFlareRows(input.area),
     getMetadata(),
   ]);
-  const name = cleanText(input.name);
+  const name = cleanText(input.name).replace(/\s+state$/, "");
   const matching = rows
     .filter(
       (row) =>
