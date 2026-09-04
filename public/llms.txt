@@ -1,0 +1,67 @@
+# SpillFlare
+
+> SpillFlare is an open, source-backed search and mapping tool for Nigeria's public oil-spill and gas-flare records. It is operated by Dairus.
+
+Website: https://spillflare.com.ng/
+Sitemap: https://spillflare.com.ng/sitemap.xml
+Robots: https://spillflare.com.ng/robots.txt
+
+## Purpose and scope
+
+SpillFlare helps citizens, journalists, researchers and decision-makers find, compare and understand environmental records from Nigeria. The product covers two related but separate public datasets:
+
+1. NOSDRA oil-spill records, including incident numbers, incident dates, report dates, locations, LGAs, states, companies, causes, status and supplied quantities.
+2. Nigeria Gas Flare Tracker estimates, available as monthly observations at state, LGA, cluster, oil-block, company and onshore/offshore levels.
+
+SpillFlare is a data access and explanation tool. It does not independently verify source records and does not make health, legal, regulatory, causal, predictive or environmental-impact conclusions beyond what a cited source record states.
+
+## Canonical pages
+
+- [Home](https://spillflare.com.ng/): overview, current source status, map and recent spill records.
+- [Explore](https://spillflare.com.ng/explore): map-based exploration of spill and flare locations.
+- [Oil-spill records](https://spillflare.com.ng/oil-spills): search and browse NOSDRA records.
+- [Oil-spill analytics](https://spillflare.com.ng/oil-spills/analytics): aggregate views of reported incidents and supplied quantities.
+- [Gas-flare estimates](https://spillflare.com.ng/gas-flares): monthly tracker estimates by geographic level.
+- [Historical company flaring](https://spillflare.com.ng/gas-flares/companies): company-level historical flare data.
+- [Places](https://spillflare.com.ng/places): Nigerian state and place views.
+- [Data and methods](https://spillflare.com.ng/data-and-methods): source endpoints, coverage, retrieval dates and methodology.
+- [Search](https://spillflare.com.ng/search): search places, companies, blocks, clusters and incident records.
+- [About SpillFlare](https://spillflare.com.ng/about): product principles and limitations.
+- [Help](https://spillflare.com.ng/help): usage and interpretation guidance.
+
+## Public data API routes
+
+- `GET /api/spills`: paginated or filtered NOSDRA spill records.
+- `GET /api/spills/{id}`: one spill record and its source-backed detail.
+- `GET /api/flares?area=state&period=YYYY-MM`: flare observations for a supported aggregation.
+- `GET /api/geo?layer=states`: geographic features used by the maps.
+- `GET /api/search?q=Bayelsa`: search results across supported records and pages.
+- `GET /api/source-health`: current source status, retrieval time, row counts and latest observations.
+- `GET /api/export`: downloadable source-derived datasets where supported by the interface.
+
+## Data interpretation rules
+
+- A missing value is labelled `Not supplied`; it is never assumed to be zero.
+- Incident date means the date recorded by the source, not the date SpillFlare retrieved the dataset.
+- Retrieval time describes when SpillFlare downloaded or refreshed a source snapshot.
+- State, LGA, cluster and oil-block records are different geographic levels. Do not total or compare them as interchangeable areas.
+- A missing flare row does not mean that no flaring occurred.
+- Company flare data is historical and ends in October 2020. It must not be described as current company performance.
+- The product is Nigeria-specific; valid offshore records remain included.
+- Reported spill quantities and counts of spill incidents are separate measures.
+- Source snapshots may be temporarily degraded while the last validated snapshot remains available. Check source health and retrieval time before describing freshness.
+
+## Citation guidance
+
+When describing a SpillFlare result, cite the relevant record detail page or data page, the underlying dataset name, the observation period and the retrieval date when available. Preserve the source record ID or incident number. Do not present a computed total without stating its filters, geographic level and whether quantities were supplied.
+
+## Assistant behavior
+
+The SpillFlare Data Assistant uses dedicated source tools before answering factual questions. Its answers are limited to the public snapshots available through this website. It should identify the supporting source record or page, retain missing values as `Not supplied`, and say plainly when the available data cannot support a question.
+
+## Ownership and contact context
+
+Product name: SpillFlare
+Operator: Dairus
+Data geography: Nigeria
+License and source ownership: Data belongs to the cited public sources; consult each source and the Data and methods page for its terms.

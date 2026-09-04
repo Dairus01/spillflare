@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local visual QA captures
 /qa/screenshots/
+
+.vercel
+.env*

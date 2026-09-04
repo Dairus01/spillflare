@@ -9,7 +9,7 @@ A public, open-access, multi-page web product for exploring Nigeria's oil spill 
 3. Run `npm run sync:data` to refresh and validate all public source snapshots.
 4. Run `npm run dev` and open `http://localhost:3000`.
 
-For a production-like local run, use `npm start`. It starts the site and refreshes the public source snapshots immediately, then once per minute in the background. If one source fails, the last successful snapshot stays available and that source is marked degraded.
+For a production-like local run, use `npm start`. It starts the site and refreshes the public source snapshots immediately, then once per minute in the background. If one source fails, the last successful snapshot stays available and that source is marked degraded. GitHub Actions refreshes the checked-in snapshots every 10 minutes and pushes changes so a Git-connected Vercel project can redeploy them.
 
 ## Data assistant
 

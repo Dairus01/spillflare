@@ -281,6 +281,32 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      <section className="section alt">
+        <div className="container">
+          <SectionHeading
+            eyebrow="SpillFlare answers"
+            title="Questions about Nigeria&apos;s environmental records"
+          />
+          <div className="faq">
+            <details>
+              <summary>What is SpillFlare?</summary>
+              <p>SpillFlare is an open search and mapping tool for Nigeria&apos;s public NOSDRA oil-spill records and Nigeria Gas Flare Tracker data.</p>
+            </details>
+            <details>
+              <summary>Where does SpillFlare&apos;s data come from?</summary>
+              <p>Oil-spill records come from the cited NOSDRA dataset. Gas-flare estimates come from the cited Nigeria Gas Flare Tracker snapshots. Each page identifies its source and retrieval date.</p>
+            </details>
+            <details>
+              <summary>Does missing data mean zero?</summary>
+              <p>No. A missing quantity, flare row or location is shown as not supplied and is never converted to zero.</p>
+            </details>
+            <details>
+              <summary>How current is the gas-flare data?</summary>
+              <p>Coverage depends on the source snapshot and is shown on each view. Company flare data is historical and ends in October 2020.</p>
+            </details>
+          </div>
+        </div>
+      </section>
     </>
   );
 }
