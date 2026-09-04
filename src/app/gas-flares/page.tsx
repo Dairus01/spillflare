@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Building2, Flame, Search } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Flame, Search } from "lucide-react";
 import { ExportLink } from "@/components/export-link";
 import { FlareTrend } from "@/components/flare-chart";
 import { NigeriaMap } from "@/components/map";
@@ -24,12 +24,25 @@ export default async function GasFlaresPage({
     : "state";
   const period = String(params.period ?? "2026-05");
   const query = String(params.q ?? "").toLowerCase();
+  const requestedPage = Number(params.page ?? "1");
   const [rows, allRows, metadata] = await Promise.all([
     flarePeriod(area, period),
     getFlareRows(area),
     getMetadata(),
   ]);
   const filtered = rows.filter((row) => !query || row.name.toLowerCase().includes(query));
+  const pageSize = 12;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
+  const page = Number.isInteger(requestedPage)
+    ? Math.min(Math.max(requestedPage, 1), pageCount)
+    : 1;
+  const visibleRows = filtered.slice((page - 1) * pageSize, page * pageSize);
+  const pageHref = (nextPage: number) => {
+    const nextParams = new URLSearchParams({ area, period });
+    if (query) nextParams.set("q", query);
+    nextParams.set("page", String(nextPage));
+    return `/gas-flares?${nextParams.toString()}`;
+  };
   const points: MapPoint[] = filtered.flatMap((row) => {
     const lat = numberOrNull(row.y);
     const lng = numberOrNull(row.x);
@@ -109,7 +122,14 @@ export default async function GasFlaresPage({
           <div className="panel">
             <div className="panel-head"><h2>Largest reported values</h2><span className="mono">{period}</span></div>
             <div className="record-list">
-              {filtered.slice(0, 12).map((row, index) => <Link className="record-row" key={row.name} href={area === "cluster" ? `/gas-flares/clusters/${row.name}` : area === "block" ? `/oil-blocks/${row.name.toLowerCase().replace(/\s+/g, "-")}` : `/search?q=${encodeURIComponent(row.name)}`}><time>#{String(index + 1).padStart(2, "0")}</time><div><strong>{row.name}</strong><p>{formatVolume(row.mscf)}</p></div><span className="status warning"><Flame size={12} />Detected</span></Link>)}
+              {visibleRows.map((row, index) => <Link className="record-row" key={row.name} href={area === "cluster" ? `/gas-flares/clusters/${row.name}` : area === "block" ? `/oil-blocks/${row.name.toLowerCase().replace(/\s+/g, "-")}` : `/search?q=${encodeURIComponent(row.name)}`}><time>#{String((page - 1) * pageSize + index + 1).padStart(2, "0")}</time><div><strong>{row.name}</strong><p>{formatVolume(row.mscf)}</p></div><span className="status warning"><Flame size={12} />Detected</span></Link>)}
+            </div>
+            <div className="flare-pagination" aria-label="Cluster pagination">
+              <span>Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}</span>
+              <div>
+                <Link className={page === 1 ? "button disabled" : "button ghost"} href={pageHref(page - 1)} aria-disabled={page === 1} tabIndex={page === 1 ? -1 : undefined}><ArrowLeft size={14} />Previous</Link>
+                <Link className={page === pageCount ? "button disabled" : "button ghost"} href={pageHref(page + 1)} aria-disabled={page === pageCount} tabIndex={page === pageCount ? -1 : undefined}>Next<ArrowRight size={14} /></Link>
+              </div>
             </div>
           </div>
         </div>
