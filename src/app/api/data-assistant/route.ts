@@ -22,23 +22,6 @@ const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const requestLimit = new Map<string, { count: number; resetAt: number }>();
-const MAX_REQUESTS_PER_MINUTE = 12;
-
-function isRateLimited(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const key = forwardedFor?.split(",")[0]?.trim() || "local";
-  const now = Date.now();
-  const existing = requestLimit.get(key);
-  const entry =
-    !existing || existing.resetAt < now
-      ? { count: 0, resetAt: now + 60_000 }
-      : existing;
-  entry.count += 1;
-  requestLimit.set(key, entry);
-  return entry.count > MAX_REQUESTS_PER_MINUTE;
-}
-
 const instructions = `You are the SpillFlare Data Assistant.
 
 Your scope is limited to the public NOSDRA oil-spill records and Nigeria Gas Flare Tracker data available through the supplied tools. Treat tool results as the only factual basis for claims about this product's data. Always use a relevant tool before answering a factual question, even if the user gave a record number.
@@ -131,13 +114,6 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
-  if (isRateLimited(request)) {
-    return Response.json(
-      { error: "Please wait a moment before asking another question." },
-      { status: 429 },
-    );
-  }
-
   let body: { messages?: unknown };
   try {
     body = await request.json();
