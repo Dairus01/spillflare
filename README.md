@@ -13,7 +13,7 @@ For a production-like local run, use `npm start`. It starts the site and refresh
 
 ## Data assistant
 
-The bottom-right assistant answers only from the public NOSDRA and Nigeria Gas Flare Tracker snapshots. Add `OPENROUTER_API_KEY` from [OpenRouter](https://openrouter.ai/keys) to `.env.local` and restart the app to enable its language model. It uses the free `liquid/lfm-2.5-2.6b:free` OpenRouter model, checks source records through dedicated data tools, keeps missing values as “not supplied,” and does not make predictions or unsupported environmental conclusions.
+The bottom-right assistant answers only from the public NOSDRA and Nigeria Gas Flare Tracker snapshots. Add `OPENROUTER_API_KEY` from [OpenRouter](https://openrouter.ai/keys) to `.env.local` and restart the app to enable its language model. It uses OpenRouter&apos;s `openrouter/free` router, checks source records through dedicated data tools, keeps missing values as “not supplied,” and does not make predictions or unsupported environmental conclusions.
 
 The checked-in `data/snapshots` directory is a last-known-good fallback. Live retrieval and observation recency are shown separately throughout the interface.
 

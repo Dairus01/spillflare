@@ -5,7 +5,7 @@ import {
   tool,
   type UIMessage,
 } from "ai";
-import { openrouter } from "@openrouter/ai-sdk-provider";
+import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { z } from "zod";
 import {
   discoverRecords,
@@ -17,6 +17,10 @@ import {
 
 export const runtime = "nodejs";
 export const maxDuration = 30;
+
+const openrouter = createOpenRouter({
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
 
 const requestLimit = new Map<string, { count: number; resetAt: number }>();
 const MAX_REQUESTS_PER_MINUTE = 12;
@@ -148,12 +152,17 @@ export async function POST(request: Request) {
 
   const messages = body.messages.slice(-12);
   const result = streamText({
-    model: openrouter("liquid/lfm-2.5-2.6b:free"),
+    model: openrouter("openrouter/free"),
     instructions,
     messages: await convertToModelMessages(messages),
     tools,
-    stopWhen: stepCountIs(3),
-    maxOutputTokens: 600,
+    stopWhen: stepCountIs(2),
+    maxOutputTokens: 400,
+    providerOptions: {
+      openrouter: {
+        reasoning: { max_tokens: 64 },
+      },
+    },
   });
 
   return result.toUIMessageStreamResponse();
