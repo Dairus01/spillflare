@@ -158,12 +158,6 @@ export async function POST(request: Request) {
     messages: await convertToModelMessages(messages),
     tools,
     stopWhen: stepCountIs(2),
-    maxOutputTokens: 400,
-    providerOptions: {
-      openrouter: {
-        reasoning: { max_tokens: 64 },
-      },
-    },
   });
 
   return result.toUIMessageStreamResponse();
