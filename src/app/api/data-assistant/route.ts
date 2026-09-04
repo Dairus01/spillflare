@@ -157,7 +157,7 @@ export async function POST(request: Request) {
     instructions,
     messages: await convertToModelMessages(messages),
     tools,
-    stopWhen: stepCountIs(2),
+    stopWhen: stepCountIs(4),
   });
 
   return result.toUIMessageStreamResponse();
