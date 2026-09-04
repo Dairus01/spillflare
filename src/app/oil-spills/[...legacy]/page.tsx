@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { notFound } from "next/navigation";
 import { findSpill } from "@/lib/data";
 import { spillPath } from "@/lib/format";
+import SpillDetailPage from "../[id]/page";
+import EvidencePage from "../[id]/evidence/page";
 
 /**
  * Compatibility route for incident numbers such as 2026/LAR/025. Those
@@ -21,22 +21,9 @@ export default async function LegacySpillRoute({
   const row = await findSpill(incidentNumber);
 
   if (!row) notFound();
-  const canonicalPath = `${spillPath(row.id)}${wantsEvidence ? "/evidence" : ""}`;
-  return (
-    <section className="page-pad">
-      <div className="container prose">
-        <span className="eyebrow">NOSDRA oil-spill record</span>
-        <h1>Oil spill incident {row.incidentnumber ?? row.id}</h1>
-        <p>
-          This record is available at its canonical SpillFlare page. The source
-          incident number remains visible so older links continue to work.
-        </p>
-        <Link className="button" href={canonicalPath}>
-          View the canonical record <ArrowRight size={16} />
-        </Link>
-      </div>
-    </section>
-  );
+  return wantsEvidence
+    ? EvidencePage({ params: Promise.resolve({ id: row.id }) })
+    : SpillDetailPage({ params: Promise.resolve({ id: row.id }) });
 }
 
 export async function generateMetadata({
