@@ -3,14 +3,12 @@ import { getFlareRows, getGeo, getMetadata, getSpills } from "@/lib/data";
 import { slugify, spillPath } from "@/lib/format";
 import { siteUrl } from "@/lib/site";
 import { isIndexableSpill } from "@/lib/seo";
+import {
+  parseW3cDate,
+  trustedIncidentLastModified,
+} from "@/lib/sitemap-date";
 
 export const dynamic = "force-dynamic";
-
-function validDate(value?: string | null) {
-  if (!value) return undefined;
-  const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? new Date(timestamp) : undefined;
-}
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [metadata, spills, states, clusters, blocks] = await Promise.all([
@@ -20,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     getFlareRows("cluster"),
     getFlareRows("block"),
   ]);
-  const retrievedAt = validDate(metadata.retrievedAt) ?? new Date();
+  const retrievedAt = parseW3cDate(metadata.retrievedAt);
 
   const staticPages: MetadataRoute.Sitemap = [
     ["", "daily", 1],
@@ -42,7 +40,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const spillPages: MetadataRoute.Sitemap = spills.filter(isIndexableSpill).map((spill) => ({
     url: `${siteUrl}${spillPath(spill.id)}`,
-    lastModified: validDate(spill.incidentdate) ?? retrievedAt,
+    lastModified: trustedIncidentLastModified(spill, retrievedAt),
     changeFrequency: "monthly",
     priority: 0.65,
   }));
