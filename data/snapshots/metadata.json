@@ -1,10 +1,10 @@
 {
-  "retrievedAt": "2026-09-05T04:38:37.450Z",
+  "retrievedAt": "2026-09-05T08:36:17.886Z",
   "sources": {
     "spillsPrimary": {
       "url": "https://oilspillmonitor.ng/api/spill-data.php?dataset=nosdra&format=json",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "7c0f360bca3896b4c716d483aa591854fc68668e8abe000036e979d326b1a340",
       "count": 21162,
       "latestObservation": "2026-08-26"
@@ -12,7 +12,7 @@
     "spillsMirror": {
       "url": "https://nosdra.oilspillmonitor.ng/osm-2019/api/spill-data.php?dataset=nosdra&format=json",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "7c0f360bca3896b4c716d483aa591854fc68668e8abe000036e979d326b1a340",
       "count": 21162,
       "latestObservation": "2026-08-26"
@@ -20,7 +20,7 @@
     "flareState": {
       "url": "https://gasflaretracker.ng/api/mscf.php?area=state",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "80055a6a25a9237bb19f8c67200f296f2c0474dc5890221eb679e219cc33bbdc",
       "count": 1333,
       "latestObservation": "2026-05"
@@ -28,7 +28,7 @@
     "flareLga": {
       "url": "https://gasflaretracker.ng/api/mscf.php?area=lga",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "df9787dfca078a39bd416b0d9a03b0fe9e90f75ce29032396e832cbaa97275be",
       "count": 6683,
       "latestObservation": "2026-05"
@@ -36,7 +36,7 @@
     "flareCluster": {
       "url": "https://gasflaretracker.ng/api/mscf.php?area=cluster",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "021fa27fa078d6eb341e2682f971119d6ce03656fbc905175b2241f4baa8768e",
       "count": 21662,
       "latestObservation": "2026-05"
@@ -44,7 +44,7 @@
     "flareBlock": {
       "url": "https://gasflaretracker.ng/api/mscf.php?area=block",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "6e3930875ae5a8325a6bb9e711e2afbf11bc97c72e6940688868e3e6e463e69c",
       "count": 10118,
       "latestObservation": "2026-05"
@@ -52,7 +52,7 @@
     "flareOnshoreOffshore": {
       "url": "https://gasflaretracker.ng/api/mscf.php?area=onshore_offshore",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "af69d819d24e9c106480692464d374a1d2e52e7ac20a3c8dc39e6b439e9c9f77",
       "count": 342,
       "latestObservation": "2026-05"
@@ -60,7 +60,7 @@
     "flareCompany": {
       "url": "https://gasflaretracker.ng/api/mscf.php?area=company",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "5b9fbf634eeefd714bc07da2025372845cbb7e605229a7482f8433f00541988d",
       "count": 2479,
       "latestObservation": "2020-10"
@@ -68,7 +68,7 @@
     "geoStates": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=states",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "e39e4592de52a5f6e6521c2a70c631af2756a1a6e0d839dc585767be58319d9c",
       "count": 37,
       "latestObservation": null
@@ -76,7 +76,7 @@
     "geoLgas": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=lgas",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "be4392e3d9604742b0c3e14168f1cc40183a8ba2508ceaa490e082a0c28ab421",
       "count": 774,
       "latestObservation": null
@@ -84,7 +84,7 @@
     "geoBlocks": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=blocks",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "def99f032693a76db169c7ebeefdc8db96083449f891047e352c73838687cea3",
       "count": 287,
       "latestObservation": null
@@ -92,7 +92,7 @@
     "geoClusters": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=clusters",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "b63fe0fa00a711f2c0b83c3cc73616e4b44b168edb4a19af8be3cf9e67a3db61",
       "count": 260,
       "latestObservation": null
@@ -100,7 +100,7 @@
     "geoOnshoreOffshore": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=onshore_offshore",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "be26220122ce81f88751cc35f54406a77b9537c3cef2f88f0628e1e872518702",
       "count": 2,
       "latestObservation": null
@@ -108,7 +108,7 @@
     "geoLocations": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=location",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "69238ede9168b861925b5776d7d94e6ab510ed656b000bf873161921e9df022a",
       "count": 203,
       "latestObservation": null
@@ -116,7 +116,7 @@
     "geoPopulation": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=population",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "8804d2903adac208793ccd7c62022a3dac2bf82d139c5e75e5eec5438b583ff0",
       "count": 119,
       "latestObservation": null
@@ -124,7 +124,7 @@
     "geoOilfields": {
       "url": "https://gasflaretracker.ng/api/feature-collection.php?table=oilfields",
       "status": "healthy",
-      "retrievedAt": "2026-09-05T04:38:37.450Z",
+      "retrievedAt": "2026-09-05T08:36:17.886Z",
       "sha256": "ee1bafa781271d4a76cd6043b9cdf10c7b56a1595fab44f5ed9621c22c8e88d5",
       "count": 397,
       "latestObservation": null
