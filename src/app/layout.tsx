@@ -6,21 +6,21 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { DataAssistant } from "@/components/data-assistant";
+import { homeDescription, siteName, siteUrl } from "@/lib/site";
 
 const manrope = Manrope({ variable: "--font-manrope", subsets: ["latin"] });
 const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", weight: ["400", "500", "600"], subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+  metadataBase: new URL(siteUrl),
   title: { default: "SpillFlare", template: "%s · SpillFlare" },
   icons: { icon: "/icon.svg", shortcut: "/icon.svg", apple: "/icon.svg" },
-  description: "Explore Nigeria's public oil spill records and gas flare data with searchable source records, maps, trends and clear data limitations.",
+  description: homeDescription,
   keywords: ["Nigeria oil spills", "Nigeria gas flares", "NOSDRA spill records", "Gas Flare Tracker", "environmental data Nigeria"],
-  applicationName: "SpillFlare",
+  applicationName: siteName,
   authors: [{ name: "Dairus" }],
   creator: "Dairus",
   publisher: "Dairus",
-  alternates: { canonical: "/" },
   openGraph: {
     type: "website",
     siteName: "SpillFlare",
@@ -40,23 +40,24 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
   const structuredData = {
     "@context": "https://schema.org",
     "@graph": [
       {
         "@type": "Organization",
-        name: "SpillFlare",
+        "@id": `${siteUrl}/#organization`,
+        name: siteName,
         url: siteUrl,
         logo: `${siteUrl}/icon.svg`,
         founder: { "@type": "Person", name: "Dairus" },
       },
       {
         "@type": "WebSite",
-        name: "SpillFlare",
+        "@id": `${siteUrl}/#website`,
+        name: siteName,
         url: siteUrl,
         description: "Searchable public records of Nigeria's oil spills and gas flares.",
-        publisher: { "@type": "Organization", name: "SpillFlare" },
+        publisher: { "@id": `${siteUrl}/#organization` },
         potentialAction: {
           "@type": "SearchAction",
           target: `${siteUrl}/search?q={search_term_string}`,
@@ -65,5 +66,5 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       },
     ],
   };
-  return <html lang="en" suppressHydrationWarning><head><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }} /></head><body className={`${manrope.variable} ${plexMono.variable}`}><ThemeProvider><a className="skip-link" href="#main-content">Skip to content</a><SiteHeader /><main id="main-content">{children}</main><SiteFooter /><DataAssistant /></ThemeProvider></body></html>;
+  return <html lang="en" suppressHydrationWarning><head><script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} /></head><body className={`${manrope.variable} ${plexMono.variable}`}><ThemeProvider><a className="skip-link" href="#main-content">Skip to content</a><SiteHeader /><main id="main-content">{children}</main><SiteFooter /><DataAssistant /></ThemeProvider></body></html>;
 }

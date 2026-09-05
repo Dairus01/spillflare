@@ -8,8 +8,43 @@ import { DataNote, Metric, SourceRail } from "@/components/ui";
 import { flareSeries, getGeo, getMetadata, getSpills, spillCoordinates } from "@/lib/data";
 import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, spillPath, stateCodes } from "@/lib/format";
 import type { GeoFeature, MapPoint, SpillRow } from "@/types/domain";
+import { siteUrl } from "@/lib/site";
 
-export const metadata: Metadata = { title: "State profile" };
+async function findState(slug: string) {
+  const states = await getGeo("states");
+  return states.features.find(
+    (item) =>
+      slugify(String(item.properties.admin1name ?? item.properties.name ?? "")) ===
+      slugify(slug),
+  );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const feature = await findState(slug);
+  if (!feature) return { title: "State environmental profile not found" };
+  const stateName = String(feature.properties.admin1name ?? feature.properties.name);
+  const code = Object.entries(stateCodes).find(([, name]) => name === stateName)?.[0];
+  const [spills, flares] = await Promise.all([getSpills(), flareSeries("state", stateName)]);
+  const spillCount = spills.filter(
+    (row) =>
+      row.statesaffected === code ||
+      row.sitelocationname?.toLowerCase().includes(stateName.toLowerCase()),
+  ).length;
+  const latestFlare = flares.at(-1);
+  const title = `${stateName} Oil Spills & Gas Flaring Data`;
+  const description = `Explore ${formatNumber(spillCount)} recorded oil spills in ${stateName} State, Nigeria${latestFlare ? ` and monthly gas flaring data through ${formatDate(latestFlare.month, { month: "long", year: "numeric" })}` : ""}. View maps, companies, locations and source records.`;
+  return {
+    title,
+    description,
+    alternates: { canonical: `/places/states/${slugify(stateName)}` },
+    openGraph: { title, description, type: "website", url: `/places/states/${slugify(stateName)}` },
+  };
+}
 
 const pageSize = 10;
 const layerValues = ["both", "spills", "flares"] as const;
@@ -57,8 +92,7 @@ export default async function StatePage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const [{ slug }, query] = await Promise.all([params, searchParams]);
-  const [states, spills, metadata] = await Promise.all([getGeo("states"), getSpills(), getMetadata()]);
-  const feature = states.features.find((item) => slugify(String(item.properties.admin1name ?? item.properties.name ?? "")) === slugify(slug));
+  const [feature, spills, metadata] = await Promise.all([findState(slug), getSpills(), getMetadata()]);
   if (!feature) notFound();
 
   const stateName = String(feature.properties.admin1name ?? feature.properties.name);
@@ -137,14 +171,53 @@ export default async function StatePage({
     value: numberOrNull(row.mscf) ?? 0,
   }));
   const persistedQuery = { year, company, layer, flareMonth, q: search };
+  const topCompanies = companies
+    .map((name) => ({
+      name,
+      count: stateSpills.filter((row) => row.company === name).length,
+    }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, 5);
+  const statePath = `/places/states/${slugify(stateName)}`;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "CollectionPage",
+        "@id": `${siteUrl}${statePath}/#webpage`,
+        url: `${siteUrl}${statePath}`,
+        name: `${stateName} Oil Spills & Gas Flaring Data`,
+        description: `Source-backed oil spill records and monthly gas flare estimates for ${stateName} State, Nigeria.`,
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        about: { "@type": "AdministrativeArea", name: `${stateName} State, Nigeria` },
+      },
+      {
+        "@type": "Dataset",
+        name: `${stateName} oil spill and gas flare records`,
+        description: `${formatNumber(stateSpills.length)} oil spill records and ${formatNumber(series.length)} monthly state gas flare observations for ${stateName}.`,
+        url: `${siteUrl}${statePath}`,
+        spatialCoverage: { "@type": "AdministrativeArea", name: `${stateName} State, Nigeria` },
+        creator: { "@id": `${siteUrl}/#organization` },
+        isAccessibleForFree: true,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Places", item: `${siteUrl}/places` },
+          { "@type": "ListItem", position: 2, name: stateName, item: `${siteUrl}${statePath}` },
+        ],
+      },
+    ],
+  };
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <section className="detail-hero state-hero">
         <div className="container">
           <div className="breadcrumbs"><Link href="/places">Places</Link> / {stateName}</div>
           <div className="detail-title">
-            <div><span className="badge">State profile</span><h1>{stateName}</h1><p>Explore recent-to-historical oil spill records and monthly state-level gas flare estimates without combining their measurements.</p></div>
+            <div><span className="badge">State profile</span><h1>Oil Spills and Gas Flaring in {stateName} State</h1><p>Explore {formatNumber(stateSpills.length)} oil spill records and {formatNumber(series.length)} monthly state-level gas flare observations for {stateName}, with source dates and limitations kept visible.</p></div>
           </div>
         </div>
       </section>
@@ -176,6 +249,15 @@ export default async function StatePage({
           <Metric label="Selected flare month" value={selectedFlare ? formatVolume(selectedFlare.mscf) : "No supplied row"} detail={flareMonth ? formatDate(flareMonth, { month: "long", year: "numeric" }) : "No state flare month"} />
           <Metric label="Data on map" value={layer === "both" ? "Both" : layer === "spills" ? "Oil spills" : "Gas flares"} detail={`${formatNumber(points.length)} visible source locations`} />
         </div>
+
+        <section className="panel" style={{ marginBottom: 22 }}>
+          <div className="panel-head"><h2>{stateName} environmental record summary</h2></div>
+          <div className="panel-body prose">
+            <p>The SpillFlare profile for {stateName} brings together two separate public datasets: NOSDRA oil spill incident records and monthly state-level estimates from the Nigeria Gas Flare Tracker. The profile currently contains <strong>{formatNumber(stateSpills.length)} oil spill records</strong>{earliestStateSpill && latestStateSpill ? <> dated from {formatDate(earliestStateSpill, { month: "long", year: "numeric" })} to {formatDate(latestStateSpill, { month: "long", year: "numeric" })}</> : null}.</p>
+            {topCompanies.length > 0 && <p>Companies appearing most often in the supplied {stateName} spill records include {topCompanies.map((item, index) => <span key={item.name}>{index > 0 ? index === topCompanies.length - 1 ? " and " : ", " : ""}<Link href={`${statePath}?year=all&company=${encodeURIComponent(item.name)}`}>{item.name} ({formatNumber(item.count)})</Link></span>)}. These are record counts, not a finding of legal responsibility.</p>}
+            <p>Browse the incident list below, compare the state&apos;s monthly flare estimates, or continue to the national <Link href="/oil-spills">oil spill tracker</Link> and <Link href="/gas-flares">gas flaring tracker</Link>.</p>
+          </div>
+        </section>
 
         <div className="state-map-layout">
           <NigeriaMap points={points} polygons={{ type: "FeatureCollection", features: [feature] }} height={650} center={mapCenter(feature)} zoom={8} />

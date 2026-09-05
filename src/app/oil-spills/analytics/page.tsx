@@ -10,6 +10,7 @@ import { buildSpillAnalytics, spillYears } from "@/lib/spill-analytics";
 export const metadata: Metadata = {
   title: "Oil spill analytics",
   description: "Compare Nigeria's reported oil spills by company, cause, month and state using NOSDRA source records.",
+  alternates: { canonical: "/oil-spills/analytics" },
 };
 
 export default async function OilSpillAnalyticsPage({ searchParams }: { searchParams: Promise<{ year?: string }> }) {

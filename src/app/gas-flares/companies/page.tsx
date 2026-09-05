@@ -10,6 +10,7 @@ import { formatDate, formatNumber, formatVolume, numberOrNull } from "@/lib/form
 export const metadata: Metadata = {
   title: "Historical company flare estimates",
   description: "Explore source-supplied historical gas flare estimates by company through October 2020.",
+  alternates: { canonical: "/gas-flares/companies" },
 };
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;

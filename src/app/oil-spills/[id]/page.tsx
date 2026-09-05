@@ -6,12 +6,18 @@ import { NigeriaMap } from "@/components/map";
 import { DataNote, SourceRail } from "@/components/ui";
 import {
   findSpill,
+  getFlareRows,
   getMetadata,
+  getSpills,
   parseAttachments,
   spillCoordinates,
 } from "@/lib/data";
-import { codedLabel, formatDate, formatNumber, stateCodes } from "@/lib/format";
+import { codedLabel, formatDate, formatNumber, slugify, spillPath, stateCodes } from "@/lib/format";
 import type { MapPoint } from "@/types/domain";
+import { isIndexableSpill, spillSeoDescription, spillSeoTitle, spillStateName, spillYear } from "@/lib/seo";
+import { siteUrl } from "@/lib/site";
+import { spillMentionsBlock } from "@/lib/geo-relations";
+import { concessionIdentityNames } from "@/data/concession-lineage";
 export async function generateMetadata({
   params,
 }: {
@@ -20,9 +26,16 @@ export async function generateMetadata({
   const { id } = await params;
   const row = await findSpill(id);
   return {
-    title: row
-      ? `Oil spill ${row.incidentnumber ?? row.id}`
-      : "Oil spill not found",
+    title: row ? spillSeoTitle(row) : "Oil spill not found",
+    description: row ? spillSeoDescription(row) : undefined,
+    alternates: row ? { canonical: spillPath(row.id) } : undefined,
+    robots: row && !isIndexableSpill(row) ? { index: false, follow: true } : undefined,
+    openGraph: row ? {
+      title: spillSeoTitle(row),
+      description: spillSeoDescription(row),
+      type: "article",
+      url: spillPath(row.id),
+    } : undefined,
   };
 }
 export default async function SpillDetailPage({
@@ -31,8 +44,10 @@ export default async function SpillDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [row, metadata] = await Promise.all([findSpill(id), getMetadata()]);
+  const [row, metadata, allSpills, blockRows] = await Promise.all([findSpill(id), getMetadata(), getSpills(), getFlareRows("block")]);
   if (!row) notFound();
+  const stateName = spillStateName(row);
+  const year = spillYear(row);
   const coordinates = spillCoordinates(row);
   const attachments = parseAttachments(row);
   const point: MapPoint[] = coordinates
@@ -46,19 +61,59 @@ export default async function SpillDetailPage({
         },
       ]
     : [];
+  const relatedSpills = allSpills
+    .filter((candidate) =>
+      candidate.id !== row.id &&
+      ((row.statesaffected && candidate.statesaffected === row.statesaffected) ||
+        (row.company && candidate.company === row.company)),
+    )
+    .sort((a, b) => String(b.incidentdate ?? "").localeCompare(String(a.incidentdate ?? "")))
+    .slice(0, 5);
+  const relatedBlocks = [...new Set(blockRows.map((block) => block.name))]
+    .filter((blockName) =>
+      concessionIdentityNames(blockName).some((identity) =>
+        spillMentionsBlock(row, identity),
+      ),
+    );
+  const recordPath = spillPath(row.id);
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${siteUrl}${recordPath}/#webpage`,
+        url: `${siteUrl}${recordPath}`,
+        name: spillSeoTitle(row),
+        description: spillSeoDescription(row),
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        datePublished: row.incidentdate || undefined,
+        about: row.company ? { "@type": "Organization", name: row.company } : undefined,
+        spatialCoverage: stateName ? { "@type": "AdministrativeArea", name: `${stateName} State, Nigeria` } : undefined,
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Oil spills", item: `${siteUrl}/oil-spills` },
+          ...(stateName ? [{ "@type": "ListItem", position: 2, name: stateName, item: `${siteUrl}/places/states/${slugify(stateName)}` }] : []),
+          { "@type": "ListItem", position: stateName ? 3 : 2, name: `Incident ${row.incidentnumber ?? row.id}`, item: `${siteUrl}${recordPath}` },
+        ],
+      },
+    ],
+  };
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <section className="detail-hero">
         <div className="container">
           <div className="breadcrumbs">
-            <Link href="/oil-spills">Oil spills</Link> / Incident{" "}
+            <Link href="/oil-spills">Oil spills</Link> / {stateName ? <><Link href={`/places/states/${slugify(stateName)}`}>{stateName}</Link> / </> : null}Incident{" "}
             {row.incidentnumber ?? row.id}
           </div>
           <div className="detail-title">
             <div>
               <span className="badge">{row.status ?? "Recorded"}</span>
-              <h1>Incident {row.incidentnumber ?? row.id}</h1>
-              <p>{row.sitelocationname ?? "Location not supplied"}</p>
+              <h1>Oil Spill at {row.sitelocationname ?? row.lga ?? stateName ?? "Location Not Supplied"}</h1>
+              <p>Incident {row.incidentnumber ?? row.id}{row.company ? ` · ${row.company}` : ""}{row.incidentdate ? ` · ${formatDate(row.incidentdate)}` : ""}</p>
             </div>
             <Link className="button secondary" href="/oil-spills">
               <ArrowLeft size={16} />
@@ -233,7 +288,7 @@ export default async function SpillDetailPage({
                   <Link
                     className="button ghost"
                     style={{ width: "100%", marginTop: 12 }}
-                    href={`/oil-spills/${row.incidentnumber ?? row.id}/evidence`}
+                    href={`${spillPath(row.id)}/evidence`}
                   >
                     View all evidence
                   </Link>
@@ -245,6 +300,19 @@ export default async function SpillDetailPage({
               means confirmed in the source dataset; it is not an independent
               legal finding by this website.
             </DataNote>
+            <div className="panel" style={{ marginTop: 22 }}>
+              <div className="panel-head"><h3>Explore related records</h3></div>
+              <div className="panel-body">
+                <p style={{ color: "var(--slate)", fontSize: 12 }}>Continue through records connected by state or company. Similar records do not necessarily describe the same event.</p>
+                <div className="button-row">
+                  {stateName && <Link className="button ghost" href={`/places/states/${slugify(stateName)}`}>All {stateName} records</Link>}
+                  {row.company && <Link className="button ghost" href={`/oil-spills?year=&company=${encodeURIComponent(row.company)}`}>{row.company} records</Link>}
+                  {year && <Link className="button ghost" href={`/oil-spills?year=${year}`}>{year} oil spills</Link>}
+                  {relatedBlocks.map((blockName) => <Link className="button ghost" href={`/oil-blocks/${slugify(blockName)}`} key={blockName}>{blockName} profile</Link>)}
+                </div>
+                {relatedSpills.length > 0 && <div className="record-list" style={{ marginTop: 12 }}>{relatedSpills.map((related) => <Link className="record-row" key={related.id} href={spillPath(related.id)}><time>{formatDate(related.incidentdate, { year: "numeric", month: "short" })}</time><div><strong>{related.incidentnumber ?? related.id}</strong><p>{related.sitelocationname ?? related.lga ?? "Location not supplied"}</p></div></Link>)}</div>}
+              </div>
+            </div>
           </aside>
         </div>
       </div>

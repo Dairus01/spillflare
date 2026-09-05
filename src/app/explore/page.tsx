@@ -12,7 +12,7 @@ import {
 } from "@/lib/data";
 import { formatNumber, formatVolume, numberOrNull } from "@/lib/format";
 import type { MapPoint } from "@/types/domain";
-export const metadata: Metadata = { title: "Explore map" };
+export const metadata: Metadata = { title: "Explore map", alternates: { canonical: "/explore" } };
 export default async function ExplorePage() {
   const [spills, flares, states, metadata] = await Promise.all([
     getLatestSpills(180),

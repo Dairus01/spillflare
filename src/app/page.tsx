@@ -19,6 +19,25 @@ import {
 } from "@/lib/format";
 import { SectionHeading, SourceRail } from "@/components/ui";
 import type { MapPoint } from "@/types/domain";
+import type { Metadata } from "next";
+import { homeDescription, homeTitle, siteUrl } from "@/lib/site";
+
+export const metadata: Metadata = {
+  title: { absolute: homeTitle },
+  description: homeDescription,
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: homeTitle,
+    description: homeDescription,
+    type: "website",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: homeTitle,
+    description: homeDescription,
+  },
+};
 
 export default async function Home() {
   const [metadata, latestSpills, allSpills, stateFlares, states] =
@@ -64,8 +83,70 @@ export default async function Home() {
         ]
       : [];
   });
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebPage",
+        "@id": `${siteUrl}/#webpage`,
+        url: siteUrl,
+        name: homeTitle,
+        description: homeDescription,
+        isPartOf: { "@id": `${siteUrl}/#website` },
+        about: [
+          { "@type": "Thing", name: "Oil spills in Nigeria" },
+          { "@type": "Thing", name: "Gas flaring in Nigeria" },
+        ],
+      },
+      {
+        "@type": "Dataset",
+        "@id": `${siteUrl}/#environmental-records`,
+        name: "Nigeria oil spill and gas flare public records",
+        description: homeDescription,
+        url: siteUrl,
+        spatialCoverage: { "@type": "Place", name: "Nigeria" },
+        creator: { "@id": `${siteUrl}/#organization` },
+        isAccessibleForFree: true,
+      },
+      {
+        "@type": "FAQPage",
+        mainEntity: [
+          {
+            "@type": "Question",
+            name: "What is SpillFlare?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "SpillFlare is an open search and mapping tool for Nigeria's public NOSDRA oil-spill records and Nigeria Gas Flare Tracker data.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Where does SpillFlare's data come from?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "Oil-spill records come from the cited NOSDRA dataset. Gas-flare estimates come from cited Nigeria Gas Flare Tracker snapshots.",
+            },
+          },
+          {
+            "@type": "Question",
+            name: "Does missing data mean zero?",
+            acceptedAnswer: {
+              "@type": "Answer",
+              text: "No. Missing quantities, flare rows and locations are shown as not supplied and are never converted to zero.",
+            },
+          },
+        ],
+      },
+    ],
+  };
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        }}
+      />
       <SourceRail
         label="Sources checked · NOSDRA + Nigeria Gas Flare Tracker"
         observation="2026-08-23"
@@ -75,12 +156,11 @@ export default async function Home() {
         <div className="home-hero-grid">
           <div className="home-hero-copy">
             <span className="eyebrow">Nigeria · Open environmental data</span>
-            <h1>
-              See what Nigeria&apos;s environmental records actually show.
-            </h1>
+            <h1>Nigeria Oil Spill &amp; Gas Flare Tracker</h1>
             <p>
-              Explore oil-spill records and monthly gas-flare estimates with
-              every source, date and limitation kept visible.
+              Track oil spills and gas flaring across Nigeria through
+              searchable incident records, interactive maps and monthly flare
+              estimates, with every source, date and limitation kept visible.
             </p>
             <form className="hero-search" action="/search">
               <Search

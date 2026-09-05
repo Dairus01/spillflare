@@ -5,7 +5,25 @@ import { ExternalLink, FileText } from "lucide-react";
 import { notFound } from "next/navigation";
 import { DataNote } from "@/components/ui";
 import { findSpill, parseAttachments } from "@/lib/data";
-export const metadata: Metadata = { title: "Oil spill evidence" };
+import { spillPath } from "@/lib/format";
+import { spillSeoTitle } from "@/lib/seo";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const row = await findSpill(id);
+  if (!row) return { title: "Oil spill evidence not found" };
+  const attachments = parseAttachments(row);
+  return {
+    title: `Evidence for ${spillSeoTitle(row)}`,
+    description: `Source attachments and investigation documents associated with oil spill incident ${row.incidentnumber ?? row.id}.`,
+    alternates: { canonical: `${spillPath(row.id)}/evidence` },
+    robots: attachments.length ? undefined : { index: false, follow: true },
+  };
+}
 export default async function EvidencePage({
   params,
 }: {
@@ -20,7 +38,7 @@ export default async function EvidencePage({
       <section className="page-hero">
         <div className="container">
           <div className="breadcrumbs">
-            <Link href={`/oil-spills/${row.incidentnumber ?? row.id}`}>
+            <Link href={spillPath(row.id)}>
               Incident {row.incidentnumber ?? row.id}
             </Link>{" "}
             / Evidence

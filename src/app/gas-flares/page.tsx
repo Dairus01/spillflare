@@ -9,7 +9,18 @@ import { flarePeriod, getFlareRows, getMetadata } from "@/lib/data";
 import { formatNumber, formatVolume, numberOrNull, titleCase } from "@/lib/format";
 import type { MapPoint } from "@/types/domain";
 
-export const metadata: Metadata = { title: "Gas flares" };
+export const metadata: Metadata = {
+  title: "Nigeria Gas Flaring Tracker, Map & Data",
+  description:
+    "Explore gas flaring in Nigeria by state, LGA, cluster and oil block using monthly tracker estimates, interactive maps and source-backed data.",
+  alternates: { canonical: "/gas-flares" },
+  openGraph: {
+    title: "Nigeria Gas Flaring Tracker, Map & Data",
+    description:
+      "Compare monthly gas flare estimates across Nigerian states, LGAs, clusters and oil blocks.",
+    url: "/gas-flares",
+  },
+};
 const validAreas = ["state", "lga", "cluster", "block", "onshore_offshore"] as const;
 
 export default async function GasFlaresPage({
@@ -79,8 +90,8 @@ export default async function GasFlaresPage({
       <section className="page-hero">
         <div className="container">
           <span className="eyebrow">Nigeria Gas Flare Tracker</span>
-          <h1>Gas flare explorer</h1>
-          <p>Compare detected flaring within one geographic level at a time. States, LGAs, clusters and oil blocks remain distinct.</p>
+          <h1>Nigeria Gas Flaring Tracker</h1>
+          <p>Explore monthly gas flare estimates across Nigeria and compare detected flaring within one geographic level at a time. States, LGAs, clusters and oil blocks remain distinct.</p>
           <div className="button-row">
             <Link className="button secondary" href="/gas-flares/companies"><Building2 size={17} />Historical company data</Link>
           </div>

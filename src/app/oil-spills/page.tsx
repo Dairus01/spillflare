@@ -7,7 +7,18 @@ import { DataNote, SourceRail } from "@/components/ui";
 import { getMetadata, getSpills, spillCoordinates } from "@/lib/data";
 import { codedLabel, formatDate, formatNumber, stateCodes } from "@/lib/format";
 import type { MapPoint } from "@/types/domain";
-export const metadata: Metadata = { title: "Oil spills" };
+export const metadata: Metadata = {
+  title: "Nigeria Oil Spill Tracker & Incident Records",
+  description:
+    "Explore reported oil spills across Nigeria by date, company and location using searchable NOSDRA incident records, maps and source evidence.",
+  alternates: { canonical: "/oil-spills" },
+  openGraph: {
+    title: "Nigeria Oil Spill Tracker & Incident Records",
+    description:
+      "Search reported oil spills across Nigeria and inspect maps, source fields and official evidence.",
+    url: "/oil-spills",
+  },
+};
 export default async function OilSpillsPage({
   searchParams,
 }: {
@@ -71,10 +82,11 @@ export default async function OilSpillsPage({
       <section className="page-hero">
         <div className="container">
           <span className="eyebrow">NOSDRA oil spill records</span>
-          <h1>Oil spill explorer</h1>
+          <h1>Nigeria Oil Spill Tracker</h1>
           <p>
-            Search reported incidents, inspect source fields and open evidence
-            without treating unknown quantities as zero.
+            Search reported oil spill incidents across Nigeria, inspect NOSDRA
+            source fields and open evidence without treating unknown quantities
+            as zero.
           </p>
           <div className="button-row">
             <Link className="button secondary" href="/oil-spills/analytics">

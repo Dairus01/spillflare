@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Eye, Map, ShieldCheck } from "lucide-react";
 import { SectionHeading } from "@/components/ui";
 
-export const metadata: Metadata = { title: "About" };
+export const metadata: Metadata = { title: "About", alternates: { canonical: "/about" } };
 
 export default function AboutPage() {
   return <>
