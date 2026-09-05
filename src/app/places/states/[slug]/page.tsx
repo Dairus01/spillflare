@@ -6,9 +6,10 @@ import { FlareTrend } from "@/components/flare-chart";
 import { NigeriaMap } from "@/components/map";
 import { DataNote, Metric, SourceRail } from "@/components/ui";
 import { flareSeries, getGeo, getMetadata, getSpills, spillCoordinates } from "@/lib/data";
-import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, spillPath, stateCodes } from "@/lib/format";
+import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, spillPath } from "@/lib/format";
 import type { GeoFeature, MapPoint, SpillRow } from "@/types/domain";
 import { siteUrl } from "@/lib/site";
+import { spillMatchesState } from "@/lib/spill-state";
 
 async function findState(slug: string) {
   const states = await getGeo("states");
@@ -28,13 +29,8 @@ export async function generateMetadata({
   const feature = await findState(slug);
   if (!feature) return { title: "State environmental profile not found" };
   const stateName = String(feature.properties.admin1name ?? feature.properties.name);
-  const code = Object.entries(stateCodes).find(([, name]) => name === stateName)?.[0];
   const [spills, flares] = await Promise.all([getSpills(), flareSeries("state", stateName)]);
-  const spillCount = spills.filter(
-    (row) =>
-      row.statesaffected === code ||
-      row.sitelocationname?.toLowerCase().includes(stateName.toLowerCase()),
-  ).length;
+  const spillCount = spills.filter((row) => spillMatchesState(row, stateName)).length;
   const latestFlare = flares.at(-1);
   const title = `${stateName} Oil Spills & Gas Flaring Data`;
   const description = `Explore ${formatNumber(spillCount)} recorded oil spills in ${stateName} State, Nigeria${latestFlare ? ` and monthly gas flaring data through ${formatDate(latestFlare.month, { month: "long", year: "numeric" })}` : ""}. View maps, companies, locations and source records.`;
@@ -96,9 +92,8 @@ export default async function StatePage({
   if (!feature) notFound();
 
   const stateName = String(feature.properties.admin1name ?? feature.properties.name);
-  const code = Object.entries(stateCodes).find(([, name]) => name === stateName)?.[0];
   const stateSpills = spills
-    .filter((row) => row.statesaffected === code || row.sitelocationname?.toLowerCase().includes(stateName.toLowerCase()))
+    .filter((row) => spillMatchesState(row, stateName))
     .sort((a, b) => spillTimestamp(b) - spillTimestamp(a) || String(b.id).localeCompare(String(a.id)));
   const datedStateSpills = stateSpills.filter((row) => spillTimestamp(row) >= 0);
   const earliestStateSpill = datedStateSpills.at(-1)?.incidentdate;
