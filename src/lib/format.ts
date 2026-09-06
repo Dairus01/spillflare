@@ -98,10 +98,12 @@ export const stateCodes: Record<string, string> = {
 export const spillLabels: Record<string, Record<string, string>> = {
   contaminant: { cr: "Crude oil", pp: "Petroleum product", ch: "Chemical" },
   cause: {
-    sab: "Sabotage",
+    sab: "Sabotage / theft",
     eqf: "Equipment failure",
     cor: "Corrosion",
-    op: "Operational",
+    ome: "Operational/maintenance error",
+    ytd: "Yet to determine",
+    op: "Operational/maintenance error",
   },
   spillareahabitat: {
     sw: "Swamp",

@@ -5,6 +5,7 @@ const pages = [
   "/explore",
   "/oil-spills",
   "/oil-spills/analytics",
+  "/oil-spills/causes",
   "/gas-flares",
   "/gas-flares/companies",
   "/places",

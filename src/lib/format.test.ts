@@ -14,7 +14,7 @@ describe("source-safe formatting", () => {
     expect(formatVolume("")).toBe("Not supplied");
   });
   it("decodes known source codes", () => {
-    expect(codedLabel("cause", "sab")).toBe("Sabotage");
+    expect(codedLabel("cause", "sab")).toBe("Sabotage / theft");
     expect(codedLabel("contaminant", "cr")).toBe("Crude oil");
   });
   it("creates stable public slugs", () => {
