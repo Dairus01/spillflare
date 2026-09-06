@@ -6,6 +6,7 @@ const pages = [
   "/oil-spills",
   "/oil-spills/analytics",
   "/oil-spills/causes",
+  "/oil-spills/niger-delta",
   "/gas-flares",
   "/gas-flares/companies",
   "/places",

@@ -30,7 +30,7 @@ const colors = {
   other: "#d97757",
 };
 
-export function CauseDistributionChart({ data }: { data: CauseCategorySummary[] }) {
+export function CauseDistributionChart({ data, scopeLabel = "National" }: { data: CauseCategorySummary[]; scopeLabel?: string }) {
   const chartData = data.filter((item) => item.category !== "missing" && item.count > 0).map((item) => ({
     category: item.label,
     records: item.count,
@@ -38,7 +38,7 @@ export function CauseDistributionChart({ data }: { data: CauseCategorySummary[] 
   }));
   return (
     <div className="analytics-card" role="img" aria-label="Horizontal bar chart showing reported cause categories in source records">
-      <div className="analytics-card-head"><h2>National reported-cause distribution</h2><p>Counts are source-record classifications, not independent findings of fault.</p></div>
+      <div className="analytics-card-head"><h2>{scopeLabel} reported-cause distribution</h2><p>Counts are source-record classifications, not independent findings of fault.</p></div>
       <div className="chart-frame cause-chart-frame">
         <ResponsiveContainer width="100%" height={Math.max(260, chartData.length * 52)}>
           <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 18, left: 10, bottom: 4 }} accessibilityLayer>
