@@ -3,6 +3,11 @@
 import { useEffect, useRef } from "react";
 import type { FeatureCollection, MapPoint } from "@/types/domain";
 
+/** Leaflet tiles are visual map fragments, not standalone content images. */
+export function markMapTileDecorative(tile: HTMLImageElement) {
+  tile.alt = "";
+}
+
 export function NigeriaMap({
   points = [],
   polygons,
@@ -33,14 +38,19 @@ export function NigeriaMap({
 
       // Leaflet's product prefix is optional. Esri's imagery attribution is not.
       map.attributionControl.setPrefix(false);
-      L.tileLayer(
+      const tileLayer = L.tileLayer(
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
           maxZoom: 18,
           attribution:
             '<a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">© Esri</a>',
         },
-      ).addTo(map);
+      );
+      // Bing can inspect the generated tile <img> elements. Mark each tile
+      // explicitly decorative; the map container exposes the meaningful
+      // accessible label for the complete visualization.
+      tileLayer.on("tileloadstart", ({ tile }) => markMapTileDecorative(tile));
+      tileLayer.addTo(map);
 
       if (polygons) {
         L.geoJSON(polygons as GeoJSON.GeoJsonObject, {
