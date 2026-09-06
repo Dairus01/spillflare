@@ -7,9 +7,10 @@ import { NigeriaMap } from "@/components/map";
 import { DataNote, Metric, SourceRail } from "@/components/ui";
 import { flareSeries, getGeo, getMetadata, getSpills, spillCoordinates } from "@/lib/data";
 import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, spillPath } from "@/lib/format";
-import type { GeoFeature, MapPoint, SpillRow } from "@/types/domain";
+import type { GeoFeature, MapPoint } from "@/types/domain";
 import { datasetLicense, siteUrl } from "@/lib/site";
 import { spillMatchesState } from "@/lib/spill-state";
+import { parseW3cDate, trustedIncidentLastModified, trustedIncidentYear } from "@/lib/sitemap-date";
 
 async function findState(slug: string) {
   const states = await getGeo("states");
@@ -50,12 +51,6 @@ function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
 }
 
-function spillTimestamp(row: SpillRow) {
-  if (!row.incidentdate) return -1;
-  const timestamp = Date.parse(`${row.incidentdate}T00:00:00Z`);
-  return Number.isFinite(timestamp) ? timestamp : -1;
-}
-
 function mapCenter(feature: GeoFeature): [number, number] {
   const pairs: Array<[number, number]> = [];
   function collect(value: unknown) {
@@ -92,16 +87,17 @@ export default async function StatePage({
   if (!feature) notFound();
 
   const stateName = String(feature.properties.admin1name ?? feature.properties.name);
+  const retrievedAt = parseW3cDate(metadata.retrievedAt);
   const stateSpills = spills
     .filter((row) => spillMatchesState(row, stateName))
-    .sort((a, b) => spillTimestamp(b) - spillTimestamp(a) || String(b.id).localeCompare(String(a.id)));
-  const datedStateSpills = stateSpills.filter((row) => spillTimestamp(row) >= 0);
+    .sort((a, b) => (trustedIncidentLastModified(b, retrievedAt)?.getTime() ?? -1) - (trustedIncidentLastModified(a, retrievedAt)?.getTime() ?? -1) || String(b.id).localeCompare(String(a.id)));
+  const datedStateSpills = stateSpills.filter((row) => trustedIncidentLastModified(row, retrievedAt));
   const earliestStateSpill = datedStateSpills.at(-1)?.incidentdate;
   const latestStateSpill = datedStateSpills.at(0)?.incidentdate;
   const series = await flareSeries("state", stateName);
   const latestFlare = series.at(-1);
 
-  const years = [...new Set(stateSpills.flatMap((row) => row.incidentdate?.match(/^\d{4}/)?.[0] ?? []))].sort().reverse();
+  const years = [...new Set(stateSpills.map((row) => trustedIncidentYear(row, retrievedAt)).filter((year): year is string => Boolean(year)))].sort().reverse();
   const latestYear = years[0] ?? String(new Date().getFullYear());
   const requestedYear = firstValue(query.year) ?? latestYear;
   const year = requestedYear === "all" || years.includes(requestedYear) ? requestedYear : latestYear;
@@ -121,7 +117,7 @@ export default async function StatePage({
   const selectedFlare = series.find((row) => row.month === flareMonth);
 
   const filteredSpills = stateSpills.filter((row) => {
-    if (year !== "all" && !row.incidentdate?.startsWith(year)) return false;
+    if (year !== "all" && trustedIncidentYear(row, retrievedAt) !== year) return false;
     if (company && row.company !== company) return false;
     if (searchNeedle && ![row.incidentnumber, row.company, row.sitelocationname, row.lga].join(" ").toLowerCase().includes(searchNeedle)) return false;
     return true;

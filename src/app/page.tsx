@@ -21,6 +21,7 @@ import { SectionHeading, SourceRail } from "@/components/ui";
 import type { MapPoint } from "@/types/domain";
 import type { Metadata } from "next";
 import { datasetLicense, homeDescription, homeTitle, siteUrl } from "@/lib/site";
+import { parseW3cDate, trustedIncidentYear } from "@/lib/sitemap-date";
 
 export const metadata: Metadata = {
   title: { absolute: homeTitle },
@@ -48,8 +49,9 @@ export default async function Home() {
       flarePeriod("state"),
       getGeo("states"),
     ]);
+  const retrievedAt = parseW3cDate(metadata.retrievedAt);
   const spills2026 = allSpills.filter((row) =>
-    row.incidentdate?.startsWith("2026"),
+    trustedIncidentYear(row, retrievedAt) === "2026",
   );
   const mappedSpills: MapPoint[] = latestSpills.flatMap((row) => {
     const c = spillCoordinates(row);

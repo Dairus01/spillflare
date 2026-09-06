@@ -50,3 +50,10 @@ export function trustedIncidentLastModified(
 
   return incidentDate;
 }
+
+/** Return the year only when the source incident date passes the trusted-date rules. */
+export function trustedIncidentYear(spill: SpillRow, retrievedAt?: Date) {
+  return trustedIncidentLastModified(spill, retrievedAt)
+    ?.getUTCFullYear()
+    .toString();
+}

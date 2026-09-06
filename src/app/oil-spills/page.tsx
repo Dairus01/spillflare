@@ -8,7 +8,7 @@ import { DataNote, Metric, SectionHeading, SourceRail } from "@/components/ui";
 import { getMetadata, getSpills, spillCoordinates } from "@/lib/data";
 import { codedLabel, formatDate, formatNumber, slugify, spillPath, stateCodes } from "@/lib/format";
 import { datasetLicense, siteUrl } from "@/lib/site";
-import { parseW3cDate } from "@/lib/sitemap-date";
+import { parseW3cDate, trustedIncidentYear } from "@/lib/sitemap-date";
 import { buildNationalSpillOverview } from "@/lib/spill-overview";
 import type { MapPoint } from "@/types/domain";
 
@@ -36,10 +36,11 @@ export default async function OilSpillsPage({ searchParams }: { searchParams: Pr
   const page = Number.isFinite(requestedPage) ? Math.max(1, requestedPage) : 1;
   const pageSize = 30;
   const [rows, sourceMetadata] = await Promise.all([getSpills(), getMetadata()]);
-  const overview = buildNationalSpillOverview(rows, parseW3cDate(sourceMetadata.retrievedAt));
+  const retrievedAt = parseW3cDate(sourceMetadata.retrievedAt);
+  const overview = buildNationalSpillOverview(rows, retrievedAt);
   const year = requestedYear ?? overview.latestYear ?? "";
   const filtered = rows
-    .filter((row) => (!year || row.incidentdate?.startsWith(year)) && (!company || row.company === company) && (!query || [row.incidentnumber, row.sitelocationname, row.company, row.lga, row.statesaffected].join(" ").toLowerCase().includes(query)))
+    .filter((row) => (!year || trustedIncidentYear(row, retrievedAt) === year) && (!company || row.company === company) && (!query || [row.incidentnumber, row.sitelocationname, row.company, row.lga, row.statesaffected].join(" ").toLowerCase().includes(query)))
     .sort((a, b) => String(b.incidentdate).localeCompare(String(a.incidentdate)));
   const paged = filtered.slice((page - 1) * pageSize, page * pageSize);
   const companies = overview.operators.map((item) => item.name).sort();

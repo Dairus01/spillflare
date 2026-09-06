@@ -8,6 +8,7 @@ import type {
   SpillRow,
 } from "@/types/domain";
 import { numberOrNull, spillPath } from "@/lib/format";
+import { parseW3cDate, trustedIncidentLastModified } from "@/lib/sitemap-date";
 
 const snapshotDirectory = join(process.cwd(), "data", "snapshots");
 // Snapshots can be rewritten by the background sync worker while the server is
@@ -43,11 +44,13 @@ export const getGeo = (
   );
 
 export async function getLatestSpills(limit = 8) {
-  return (await getSpills())
-    .filter((row) => row.incidentdate)
-    .sort((a, b) =>
-      String(b.incidentdate).localeCompare(String(a.incidentdate)),
-    )
+  const [spills, metadata] = await Promise.all([getSpills(), getMetadata()]);
+  const retrievedAt = parseW3cDate(metadata.retrievedAt);
+  return spills
+    .map((row) => ({ row, date: trustedIncidentLastModified(row, retrievedAt) }))
+    .filter((item): item is { row: SpillRow; date: Date } => Boolean(item.date))
+    .sort((a, b) => b.date.getTime() - a.date.getTime() || String(a.row.id).localeCompare(String(b.row.id)))
+    .map(({ row }) => row)
     .slice(0, limit);
 }
 

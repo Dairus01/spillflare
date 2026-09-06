@@ -9,6 +9,7 @@ import {
   spillPath,
   stateCodes,
 } from "@/lib/format";
+import { parseW3cDate, trustedIncidentYear } from "@/lib/sitemap-date";
 
 type FlareArea =
   | "state"
@@ -94,13 +95,14 @@ export async function findOilSpills(input: {
   limit?: number;
 }) {
   const [spills, metadata] = await Promise.all([getSpills(), getMetadata()]);
+  const retrievedAt = parseW3cDate(metadata.retrievedAt);
   const terms = searchTerms(input.query);
   const company = cleanText(input.company);
   const matching = spills
     .filter((row) => {
       if (!stateMatches(row.statesaffected, input.state)) return false;
       if (company && !cleanText(row.company).includes(company)) return false;
-      if (input.year && !row.incidentdate?.startsWith(String(input.year))) {
+      if (input.year && trustedIncidentYear(row, retrievedAt) !== String(input.year)) {
         return false;
       }
       if (!terms.length) return true;
