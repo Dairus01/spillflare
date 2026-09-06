@@ -7,7 +7,7 @@ import { NationalSpillTrend } from "@/components/national-spill-trend";
 import { DataNote, Metric, SectionHeading, SourceRail } from "@/components/ui";
 import { getMetadata, getSpills, spillCoordinates } from "@/lib/data";
 import { codedLabel, formatDate, formatNumber, slugify, spillPath, stateCodes } from "@/lib/format";
-import { siteUrl } from "@/lib/site";
+import { datasetLicense, siteUrl } from "@/lib/site";
 import { parseW3cDate } from "@/lib/sitemap-date";
 import { buildNationalSpillOverview } from "@/lib/spill-overview";
 import type { MapPoint } from "@/types/domain";
@@ -66,7 +66,7 @@ export default async function OilSpillsPage({ searchParams }: { searchParams: Pr
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "CollectionPage", "@id": `${siteUrl}/oil-spills#webpage`, url: `${siteUrl}/oil-spills`, name: title, description, isPartOf: { "@id": `${siteUrl}/#website` }, about: { "@type": "Thing", name: "Oil spills in Nigeria" } },
-      { "@type": "Dataset", "@id": `${siteUrl}/oil-spills#dataset`, name: "Nigeria oil spill records", description, url: `${siteUrl}/oil-spills`, spatialCoverage: { "@type": "Place", name: "Nigeria" }, temporalCoverage: overview.earliestYear && overview.latestYear ? `${overview.earliestYear}/${overview.latestYear}` : undefined, creator: { "@id": `${siteUrl}/#organization` }, isAccessibleForFree: true, dateModified: sourceMetadata.retrievedAt, variableMeasured: ["Incident date", "Report date", "Operator or company", "Location", "State", "Cause", "Status", "Estimated quantity where supplied"], distribution: { "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: `${siteUrl}/api/export?dataset=spills` } },
+      { "@type": "Dataset", "@id": `${siteUrl}/oil-spills#dataset`, name: "Nigeria oil spill records", description, url: `${siteUrl}/oil-spills`, spatialCoverage: { "@type": "Place", name: "Nigeria" }, temporalCoverage: overview.earliestYear && overview.latestYear ? `${overview.earliestYear}/${overview.latestYear}` : undefined, creator: { "@id": `${siteUrl}/#organization` }, isAccessibleForFree: true, ...datasetLicense, dateModified: sourceMetadata.retrievedAt, variableMeasured: ["Incident date", "Report date", "Operator or company", "Location", "State", "Cause", "Status", "Estimated quantity where supplied"], distribution: { "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: `${siteUrl}/api/export?dataset=spills` } },
       { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: siteUrl }, { "@type": "ListItem", position: 2, name: "Oil spills", item: `${siteUrl}/oil-spills` }] },
       { "@type": "FAQPage", mainEntity: faq.map((item) => ({ "@type": "Question", name: item.question, acceptedAnswer: { "@type": "Answer", text: item.answer } })) },
     ],

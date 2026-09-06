@@ -8,7 +8,7 @@ import { DataNote, Metric, SourceRail } from "@/components/ui";
 import { flareSeries, getGeo, getMetadata, getSpills, spillCoordinates } from "@/lib/data";
 import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, spillPath } from "@/lib/format";
 import type { GeoFeature, MapPoint, SpillRow } from "@/types/domain";
-import { siteUrl } from "@/lib/site";
+import { datasetLicense, siteUrl } from "@/lib/site";
 import { spillMatchesState } from "@/lib/spill-state";
 
 async function findState(slug: string) {
@@ -194,6 +194,7 @@ export default async function StatePage({
         spatialCoverage: { "@type": "AdministrativeArea", name: `${stateName} State, Nigeria` },
         creator: { "@id": `${siteUrl}/#organization` },
         isAccessibleForFree: true,
+        ...datasetLicense,
       },
       {
         "@type": "BreadcrumbList",

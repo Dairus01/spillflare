@@ -20,7 +20,7 @@ import {
 import { SectionHeading, SourceRail } from "@/components/ui";
 import type { MapPoint } from "@/types/domain";
 import type { Metadata } from "next";
-import { homeDescription, homeTitle, siteUrl } from "@/lib/site";
+import { datasetLicense, homeDescription, homeTitle, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: { absolute: homeTitle },
@@ -107,6 +107,7 @@ export default async function Home() {
         spatialCoverage: { "@type": "Place", name: "Nigeria" },
         creator: { "@id": `${siteUrl}/#organization` },
         isAccessibleForFree: true,
+        ...datasetLicense,
       },
       {
         "@type": "FAQPage",

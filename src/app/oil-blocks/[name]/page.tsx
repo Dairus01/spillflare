@@ -15,7 +15,7 @@ import {
 } from "@/lib/geo-relations";
 import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, spillPath } from "@/lib/format";
 import { spillStateName } from "@/lib/seo";
-import { siteUrl } from "@/lib/site";
+import { datasetLicense, siteUrl } from "@/lib/site";
 import type { MapPoint } from "@/types/domain";
 import {
   concessionIdentityNames,
@@ -127,6 +127,7 @@ export default async function BlockPage({ params }: { params: Promise<{ name: st
         spatialCoverage: coordinate ? { "@type": "Place", name: `${blockName}, Nigeria`, geo: { "@type": "GeoCoordinates", latitude: coordinate.lat, longitude: coordinate.lng } } : { "@type": "Country", name: "Nigeria" },
         creator: { "@id": `${siteUrl}/#organization` },
         isAccessibleForFree: true,
+        ...datasetLicense,
       },
       {
         "@type": "BreadcrumbList",

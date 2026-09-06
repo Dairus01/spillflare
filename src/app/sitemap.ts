@@ -29,6 +29,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ["/oil-spills/analytics", "weekly", 0.85],
     ["/gas-flares/companies", "monthly", 0.75],
     ["/data-and-methods", "monthly", 0.75],
+    ["/data-license", "monthly", 0.65],
     ["/about", "monthly", 0.65],
     ["/help", "monthly", 0.6],
   ].map(([path, changeFrequency, priority]) => ({

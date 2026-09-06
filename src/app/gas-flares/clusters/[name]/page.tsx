@@ -13,7 +13,7 @@ import {
   uniqueLatestRows,
 } from "@/lib/geo-relations";
 import { formatDate, formatNumber, formatVolume, numberOrNull, slugify } from "@/lib/format";
-import { siteUrl } from "@/lib/site";
+import { datasetLicense, siteUrl } from "@/lib/site";
 import type { MapPoint } from "@/types/domain";
 
 const getClusterContext = cache(async (name: string) => {
@@ -101,6 +101,7 @@ export default async function ClusterPage({ params }: { params: Promise<{ name: 
         spatialCoverage: coordinate ? { "@type": "Place", name: stateName ? `${stateName} State, Nigeria` : "Nigeria", geo: { "@type": "GeoCoordinates", latitude: coordinate.lat, longitude: coordinate.lng } } : undefined,
         creator: { "@id": `${siteUrl}/#organization` },
         isAccessibleForFree: true,
+        ...datasetLicense,
       },
       {
         "@type": "BreadcrumbList",

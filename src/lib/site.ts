@@ -6,6 +6,8 @@ export const siteUrl = (configuredSiteUrl || "https://spillflare.com.ng").replac
 );
 
 export const siteName = "SpillFlare";
+export const dataLicenseUrl = `${siteUrl}/data-license`;
+export const datasetLicense = { license: dataLicenseUrl } as const;
 export const homeTitle = "Nigeria Oil Spill & Gas Flare Tracker | SpillFlare";
 export const homeDescription =
   "Track oil spills and gas flaring across Nigeria. Explore interactive maps, incident records, operators, locations, trends and source-backed environmental data.";
