@@ -11,6 +11,7 @@ import {
   spillCoordinates,
 } from "@/lib/data";
 import { formatNumber, formatVolume, numberOrNull } from "@/lib/format";
+import { buildSourceSummary } from "@/lib/source-summary";
 import type { MapPoint } from "@/types/domain";
 export const metadata: Metadata = { title: "Explore map", alternates: { canonical: "/explore" } };
 export default async function ExplorePage() {
@@ -20,6 +21,7 @@ export default async function ExplorePage() {
     getGeo("states"),
     getMetadata(),
   ]);
+  const sourceSummary = buildSourceSummary(spills, metadata);
   const spillPoints: MapPoint[] = spills.flatMap((row) => {
     const coordinates = spillCoordinates(row);
     return coordinates
@@ -66,8 +68,8 @@ export default async function ExplorePage() {
       </section>
       <SourceRail
         label="Combined view · sources remain independent"
-        observation="2026-08-23"
-        retrieved={metadata.retrievedAt}
+        observation={sourceSummary.latestObservation}
+        retrieved={sourceSummary.retrievedAt}
       />
       <div className="wide-container page-pad">
         <div className="filter-bar">

@@ -22,6 +22,7 @@ import type { MapPoint } from "@/types/domain";
 import type { Metadata } from "next";
 import { datasetLicense, homeDescription, homeTitle, siteUrl } from "@/lib/site";
 import { parseW3cDate, trustedIncidentYear } from "@/lib/sitemap-date";
+import { buildSourceSummary } from "@/lib/source-summary";
 
 export const metadata: Metadata = {
   title: { absolute: homeTitle },
@@ -50,6 +51,7 @@ export default async function Home() {
       getGeo("states"),
     ]);
   const retrievedAt = parseW3cDate(metadata.retrievedAt);
+  const sourceSummary = buildSourceSummary(allSpills, metadata);
   const spills2026 = allSpills.filter((row) =>
     trustedIncidentYear(row, retrievedAt) === "2026",
   );
@@ -152,8 +154,8 @@ export default async function Home() {
       />
       <SourceRail
         label="Sources checked · NOSDRA + Nigeria Gas Flare Tracker"
-        observation="2026-08-23"
-        retrieved={metadata.retrievedAt}
+        observation={sourceSummary.latestObservation}
+        retrieved={sourceSummary.retrievedAt}
       />
       <section className="hero home-hero">
         <div className="home-hero-grid">

@@ -8,6 +8,25 @@ export function markMapTileDecorative(tile: HTMLImageElement) {
   tile.alt = "";
 }
 
+export function createAccessibleTileLayer(
+  L: typeof import("leaflet"),
+  url: string,
+  options: import("leaflet").TileLayerOptions,
+) {
+  class AccessibleTileLayer extends L.TileLayer {
+    protected override createTile(
+      coords: import("leaflet").Coords,
+      done: import("leaflet").DoneCallback,
+    ) {
+      const tile = super.createTile(coords, done);
+      if (tile instanceof HTMLImageElement) markMapTileDecorative(tile);
+      return tile;
+    }
+  }
+
+  return new AccessibleTileLayer(url, options);
+}
+
 export function NigeriaMap({
   points = [],
   polygons,
@@ -38,7 +57,8 @@ export function NigeriaMap({
 
       // Leaflet's product prefix is optional. Esri's imagery attribution is not.
       map.attributionControl.setPrefix(false);
-      const tileLayer = L.tileLayer(
+      const tileLayer = createAccessibleTileLayer(
+        L,
         "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
         {
           maxZoom: 18,
@@ -46,10 +66,6 @@ export function NigeriaMap({
             '<a href="https://www.esri.com/" target="_blank" rel="noopener noreferrer">© Esri</a>',
         },
       );
-      // Bing can inspect the generated tile <img> elements. Mark each tile
-      // explicitly decorative; the map container exposes the meaningful
-      // accessible label for the complete visualization.
-      tileLayer.on("tileloadstart", ({ tile }) => markMapTileDecorative(tile));
       tileLayer.addTo(map);
 
       if (polygons) {
