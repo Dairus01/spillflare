@@ -11,13 +11,20 @@ import { numberOrNull, spillPath } from "@/lib/format";
 import { parseW3cDate, trustedIncidentLastModified } from "@/lib/sitemap-date";
 
 const snapshotDirectory = join(process.cwd(), "data", "snapshots");
-// Snapshots can be rewritten by the background sync worker while the server is
-// running. Read from disk for each request so a new request sees the newest
-// completed snapshot rather than a process-lifetime memoized value.
+const snapshotCache = new Map<string, Promise<unknown>>();
+
+// Production snapshots are checked in and only change with a deployment. Keep
+// each parsed file in memory so requests do not repeatedly read and parse the
+// 15 MB spill dataset and related JSON files.
 async function readSnapshot<T>(name: string): Promise<T> {
-  return JSON.parse(
-    await readFile(join(snapshotDirectory, `${name}.json`), "utf8"),
-  ) as T;
+  let snapshot = snapshotCache.get(name);
+  if (!snapshot) {
+    snapshot = readFile(join(snapshotDirectory, `${name}.json`), "utf8").then(
+      (contents) => JSON.parse(contents) as T,
+    );
+    snapshotCache.set(name, snapshot);
+  }
+  return snapshot as Promise<T>;
 }
 
 export const getMetadata = () => readSnapshot<SourceMetadata>("metadata");

@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Live source snapshots are refreshed before `npm start`. Rendering at request
-// time ensures the refreshed files are used instead of a build-time copy.
-export const dynamic = "force-dynamic";
+// Public snapshot-backed pages may be cached and regenerated periodically.
+// A deployment always starts with the newly checked-in snapshot files.
+export const revalidate = 3600;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const structuredData = {
