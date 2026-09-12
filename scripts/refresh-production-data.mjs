@@ -199,7 +199,7 @@ try {
   if (!changedKeys.length) {
     const hooks = status.applicationSynchronized === false ? await synchronizeApplication() : { pm2Reload: false, revalidated: false, indexNow: false };
     await setStatus({ lastCheckAt: checkedAt, lastResult: failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE", failures, sources: sourceStatus, applicationSynchronized: true, ...hooks });
-    console.log(`${failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE"} spill_records=${previousSpills.length} pm2_reload=${hooks.pm2Reload}`);
+    console.log(`${failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE"} sources_healthy=${accepted.size}/${Object.keys(sources).length} sources_degraded=${failures.length} spill_records=${previousSpills.length} pm2_reload=${hooks.pm2Reload} duration_seconds=${((Date.now() - started) / 1000).toFixed(2)}`);
     await lock.close();
     lock = undefined;
     await unlink(lockFile).catch(() => {});
@@ -228,7 +228,7 @@ try {
   const hooks = await synchronizeApplication();
   const releasesPruned = await pruneReleases();
   await setStatus({ lastResult: "DATA_UPDATED", applicationSynchronized: true, releasesPruned, ...hooks });
-  console.log(`DATA_UPDATED old_records=${previousSpills.length} new_records=${nextSpills.length} added=${delta.added.length} changed=${delta.changed.length} removed=${delta.removed.length} pm2_reload=${hooks.pm2Reload} releases_pruned=${releasesPruned} duration_seconds=${((Date.now() - started) / 1000).toFixed(2)}`);
+  console.log(`DATA_UPDATED sources_healthy=${accepted.size}/${Object.keys(sources).length} sources_degraded=${failures.length} old_records=${previousSpills.length} new_records=${nextSpills.length} added=${delta.added.length} changed=${delta.changed.length} removed=${delta.removed.length} pm2_reload=${hooks.pm2Reload} indexnow=${hooks.indexNow} releases_pruned=${releasesPruned} duration_seconds=${((Date.now() - started) / 1000).toFixed(2)}`);
 } catch (error) {
   await setStatus({ lastCheckAt: new Date().toISOString(), lastResult: "FAILED", applicationSynchronized: false, error: error.message });
   console.error(`REFRESH_FAILED reason=${JSON.stringify(error.message)}`);
