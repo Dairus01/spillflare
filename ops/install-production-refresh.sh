@@ -9,7 +9,7 @@ fi
 app_dir=/var/www/spillflare
 data_dir=/var/lib/spillflare
 env_file="$app_dir/.env.production.local"
-install -d -o ubuntu -g ubuntu -m 0750 "$data_dir/releases"
+install -d -o ubuntu -g ubuntu -m 0750 "$data_dir" "$data_dir/releases"
 
 if [[ ! -e "$data_dir/current" ]]; then
   release="releases/bootstrap-$(date -u +%Y%m%dT%H%M%SZ)"
