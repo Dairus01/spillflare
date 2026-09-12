@@ -7,11 +7,15 @@ import { DataNote, SourceRail } from "@/components/ui";
 import { getFlareRows, getMetadata } from "@/lib/data";
 import { formatDate, formatNumber, formatVolume, numberOrNull } from "@/lib/format";
 
-export const metadata: Metadata = {
-  title: "Historical company flare estimates",
-  description: "Explore source-supplied historical gas flare estimates by company through October 2020.",
-  alternates: { canonical: "/gas-flares/companies" },
-};
+export async function generateMetadata({ searchParams }: { searchParams: SearchParams }): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title: "Historical company flare estimates",
+    description: "Explore source-supplied historical gas flare estimates by company through October 2020.",
+    alternates: { canonical: "/gas-flares/companies" },
+    robots: Object.keys(params).length ? { index: false, follow: true } : undefined,
+  };
+}
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

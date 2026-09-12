@@ -1,0 +1,13 @@
+[Unit]
+Description=Run SpillFlare data refresh every five minutes
+
+[Timer]
+OnBootSec=2min
+OnCalendar=*:0/5
+AccuracySec=30s
+RandomizedDelaySec=15s
+Persistent=true
+Unit=spillflare-data-refresh.service
+
+[Install]
+WantedBy=timers.target

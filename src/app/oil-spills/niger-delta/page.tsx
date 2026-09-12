@@ -22,13 +22,16 @@ import type { MapPoint } from "@/types/domain";
 const title = "Niger Delta Oil Spills: Records, Trends & Map";
 const description = "Explore Niger Delta oil-spill records, state trends, reported causes and mapped locations from SpillFlare's current NOSDRA source snapshot.";
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: { canonical: "/oil-spills/niger-delta" },
-  openGraph: { title, description, type: "website", url: "/oil-spills/niger-delta" },
-  twitter: { card: "summary", title, description },
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title, description,
+    alternates: { canonical: "/oil-spills/niger-delta" },
+    robots: Object.keys(params).length ? { index: false, follow: true } : undefined,
+    openGraph: { title, description, type: "website", url: "/oil-spills/niger-delta" },
+    twitter: { card: "summary", title, description },
+  };
+}
 
 function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;

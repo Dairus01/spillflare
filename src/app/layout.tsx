@@ -35,9 +35,9 @@ export const metadata: Metadata = {
   },
 };
 
-// Public snapshot-backed pages may be cached and regenerated periodically.
-// A deployment always starts with the newly checked-in snapshot files.
-export const revalidate = 3600;
+// Public snapshot-backed pages retain a short fallback TTL. A successful
+// production data refresh also triggers targeted route-cache invalidation.
+export const revalidate = 300;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const structuredData = {

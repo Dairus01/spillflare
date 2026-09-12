@@ -13,7 +13,15 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "sync:data": "node scripts/sync-data.mjs",
-    "indexnow": "node scripts/submit-indexnow.mjs"
+    "sync:production": "node scripts/refresh-production-data.mjs",
+    "data:status": "node scripts/data-status.mjs",
+    "indexnow": "node scripts/submit-indexnow.mjs",
+    "audit:crawl": "node scripts/seo-crawl-audit.mjs --section=crawl",
+    "audit:sitemaps": "node scripts/seo-crawl-audit.mjs --section=sitemaps",
+    "audit:canonical": "node scripts/seo-crawl-audit.mjs --section=canonical",
+    "audit:robots": "node scripts/seo-crawl-audit.mjs --section=robots",
+    "seo:crawl-audit": "node scripts/seo-crawl-audit.mjs",
+    "crawl:googlebot": "node scripts/googlebot-crawl-report.mjs"
   },
   "dependencies": {
     "@ai-sdk/react": "^4.0.93",

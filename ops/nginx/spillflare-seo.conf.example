@@ -1,0 +1,23 @@
+# Merge these blocks into the live Nginx configuration only after checking its
+# certificate paths. This permanently consolidates www while preserving path/query.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name www.spillflare.com.ng;
+    return 301 https://spillflare.com.ng$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name www.spillflare.com.ng;
+    ssl_certificate /etc/ssl/cloudflare/spillflare-origin.pem;
+    ssl_certificate_key /etc/ssl/cloudflare/spillflare-origin.key;
+    return 301 https://spillflare.com.ng$request_uri;
+}
+
+# Optional timing log for `npm run crawl:googlebot -- /var/log/nginx/spillflare_timing.log`.
+# Add the log_format in nginx.conf's http{} block, then access_log in the apex server.
+log_format spillflare_timing '$remote_addr - $remote_user [$time_local] "$request" '
+    '$status $body_bytes_sent "$http_referer" "$http_user_agent" $request_time';
+access_log /var/log/nginx/spillflare_timing.log spillflare_timing;

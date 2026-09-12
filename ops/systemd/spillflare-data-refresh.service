@@ -1,0 +1,26 @@
+[Unit]
+Description=Refresh SpillFlare production snapshots from upstream sources
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=ubuntu
+Group=ubuntu
+WorkingDirectory=/var/www/spillflare
+Environment=NODE_ENV=production
+Environment=SPILLFLARE_DATA_DIR=/var/lib/spillflare
+Environment=PATH=/opt/node22/bin:/usr/local/bin:/usr/bin:/bin
+EnvironmentFile=-/var/www/spillflare/.env.production.local
+ExecStart=/usr/bin/flock -n /run/lock/spillflare-data-refresh.lock /usr/local/bin/npm run sync:production
+TimeoutStartSec=4min
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=6
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ReadWritePaths=/var/lib/spillflare /run/lock
+
+[Install]
+WantedBy=multi-user.target

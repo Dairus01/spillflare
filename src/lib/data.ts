@@ -10,12 +10,15 @@ import type {
 import { numberOrNull, spillPath } from "@/lib/format";
 import { parseW3cDate, trustedIncidentLastModified } from "@/lib/sitemap-date";
 
-const snapshotDirectory = join(process.cwd(), "data", "snapshots");
+const runtimeDataRoot = process.env.SPILLFLARE_DATA_DIR?.trim();
+const snapshotDirectory = runtimeDataRoot
+  ? join(runtimeDataRoot, "current")
+  : join(process.cwd(), "data", "snapshots");
 const snapshotCache = new Map<string, Promise<unknown>>();
 
-// Production snapshots are checked in and only change with a deployment. Keep
-// each parsed file in memory so requests do not repeatedly read and parse the
-// 15 MB spill dataset and related JSON files.
+// Keep each parsed release in memory so requests do not repeatedly read and
+// parse the 15 MB spill dataset. Production switches immutable releases and
+// reloads this single process only after a validated data change.
 async function readSnapshot<T>(name: string): Promise<T> {
   let snapshot = snapshotCache.get(name);
   if (!snapshot) {
@@ -28,6 +31,15 @@ async function readSnapshot<T>(name: string): Promise<T> {
 }
 
 export const getMetadata = () => readSnapshot<SourceMetadata>("metadata");
+
+export async function getRefreshStatus() {
+  if (!runtimeDataRoot) return null;
+  try {
+    return JSON.parse(await readFile(join(runtimeDataRoot, "status.json"), "utf8")) as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
 export const getSpills = () => readSnapshot<SpillRow[]>("spillsPrimary");
 export const getFlareRows = (
   area: "state" | "lga" | "cluster" | "block" | "company" | "onshore_offshore",

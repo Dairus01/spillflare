@@ -1,8 +1,9 @@
-name: Refresh public data snapshots
+name: Archive public data snapshots
 
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    # Archival/history only. Oracle is the independent production freshness path.
+    - cron: "17 * * * *"
   workflow_dispatch:
 
 permissions:
@@ -33,6 +34,9 @@ jobs:
 
       - name: Refresh source snapshots
         run: npm run sync:data
+
+      - name: Validate sitemap membership
+        run: npm run audit:sitemaps
 
       - name: Notify IndexNow
         run: npm run indexnow

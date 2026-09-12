@@ -23,10 +23,12 @@ async function findState(slug: string) {
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
   const feature = await findState(slug);
   if (!feature) return { title: "State environmental profile not found" };
   const stateName = String(feature.properties.admin1name ?? feature.properties.name);
@@ -39,6 +41,7 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: `/places/states/${slugify(stateName)}` },
+    robots: Object.keys(query).length ? { index: false, follow: true } : undefined,
     openGraph: { title, description, type: "website", url: `/places/states/${slugify(stateName)}` },
   };
 }

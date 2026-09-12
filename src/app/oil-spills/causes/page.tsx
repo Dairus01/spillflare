@@ -12,12 +12,15 @@ import { siteUrl } from "@/lib/site";
 const title = "Causes of Oil Spills in Nigeria: What Records Show";
 const description = "Explore reported causes in Nigeria's public NOSDRA oil-spill records, with current source-snapshot trends, state patterns and links to underlying incidents.";
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: { canonical: "/oil-spills/causes" },
-  openGraph: { title, description, url: "/oil-spills/causes", type: "website" },
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ year?: string }> }): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title, description,
+    alternates: { canonical: "/oil-spills/causes" },
+    robots: params.year ? { index: false, follow: true } : undefined,
+    openGraph: { title, description, url: "/oil-spills/causes", type: "website" },
+  };
+}
 
 function percent(value: number, total: number) {
   return total ? `${((value / total) * 100).toFixed(1)}%` : "0%";

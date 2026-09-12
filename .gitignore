@@ -43,6 +43,8 @@ next-env.d.ts
 
 # local visual QA captures
 /qa/screenshots/
+/.googlebot-dns-cache.json
+/data/.indexnow-changes.json
 
 .vercel
 .env*

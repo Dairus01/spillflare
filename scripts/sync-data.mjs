@@ -68,10 +68,16 @@ async function fetchSource([key, url]) {
 await mkdir(outputDirectory, { recursive: true });
 
 let previousMetadata = {};
+let previousSpills = [];
 try {
   previousMetadata = JSON.parse(await readFile(path.join(outputDirectory, "metadata.json"), "utf8"));
 } catch {
   previousMetadata = {};
+}
+try {
+  previousSpills = JSON.parse(await readFile(path.join(outputDirectory, "spillsPrimary.json"), "utf8"));
+} catch {
+  previousSpills = [];
 }
 
 const retrievedAt = new Date().toISOString();
@@ -116,9 +122,24 @@ metadata.spillMirrorAgreement =
     ? primary.sha256 === mirror.sha256
     : null;
 
+// Create an untracked URL delta so IndexNow receives only changed records and
+// affected hubs instead of the complete historical archive every ten minutes.
+const primaryIndex = entries.findIndex(([key]) => key === "spillsPrimary");
+const refreshedSpills = settled[primaryIndex];
+const nextSpills = refreshedSpills?.status === "fulfilled" ? refreshedSpills.value.parsed : previousSpills;
+const oldById = new Map(previousSpills.map((row) => [String(row.id), JSON.stringify(row)]));
+const newById = new Map(nextSpills.map((row) => [String(row.id), JSON.stringify(row)]));
+const added = [...newById.keys()].filter((id) => !oldById.has(id));
+const changed = [...newById.keys()].filter((id) => oldById.has(id) && oldById.get(id) !== newById.get(id));
+const deleted = [...oldById.keys()].filter((id) => !newById.has(id));
+const anySourceChanged = Object.entries(metadata.sources).some(([key, value]) => value.sha256 && value.sha256 !== previousMetadata.sources?.[key]?.sha256);
+const hubPaths = anySourceChanged ? ["/", "/explore", "/oil-spills", "/oil-spills/archive", "/oil-spills/analytics", "/oil-spills/causes", "/oil-spills/niger-delta", "/gas-flares", "/gas-flares/companies", "/places", "/sitemap.xml"] : [];
+await writeFile(path.join(process.cwd(), "data", ".indexnow-changes.json"), JSON.stringify({ generatedAt: retrievedAt, paths: [...new Set([...added, ...changed, ...deleted].map((id) => `/oil-spills/${id}`).concat(hubPaths))] }, null, 2));
+
 await writeFile(path.join(outputDirectory, "metadata.json"), JSON.stringify(metadata, null, 2));
 
 const healthy = Object.values(metadata.sources).filter((item) => item.status === "healthy").length;
 console.log(`Saved ${healthy}/${entries.length} source snapshots to ${outputDirectory}`);
 console.log(`Spill mirrors agree: ${metadata.spillMirrorAgreement ?? "not checked"}`);
 console.log(`Refresh completed at ${retrievedAt}`);
+console.log(`IndexNow delta: ${added.length} added, ${changed.length} changed, ${deleted.length} deleted incident URLs.`);

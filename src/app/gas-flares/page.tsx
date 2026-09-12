@@ -9,18 +9,20 @@ import { flarePeriod, getFlareRows, getMetadata } from "@/lib/data";
 import { formatNumber, formatVolume, numberOrNull, titleCase } from "@/lib/format";
 import type { MapPoint } from "@/types/domain";
 
-export const metadata: Metadata = {
-  title: "Nigeria Gas Flaring Tracker, Map & Data",
-  description:
-    "Explore gas flaring in Nigeria by state, LGA, cluster and oil block using monthly tracker estimates, interactive maps and source-backed data.",
-  alternates: { canonical: "/gas-flares" },
-  openGraph: {
+export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
+  const params = await searchParams;
+  return {
     title: "Nigeria Gas Flaring Tracker, Map & Data",
-    description:
-      "Compare monthly gas flare estimates across Nigerian states, LGAs, clusters and oil blocks.",
-    url: "/gas-flares",
-  },
-};
+    description: "Explore gas flaring in Nigeria by state, LGA, cluster and oil block using monthly tracker estimates, interactive maps and source-backed data.",
+    alternates: { canonical: "/gas-flares" },
+    robots: Object.keys(params).length ? { index: false, follow: true } : undefined,
+    openGraph: {
+      title: "Nigeria Gas Flaring Tracker, Map & Data",
+      description: "Compare monthly gas flare estimates across Nigerian states, LGAs, clusters and oil blocks.",
+      url: "/gas-flares",
+    },
+  };
+}
 const validAreas = ["state", "lga", "cluster", "block", "onshore_offshore"] as const;
 
 export default async function GasFlaresPage({

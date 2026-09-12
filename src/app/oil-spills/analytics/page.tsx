@@ -14,13 +14,16 @@ import { siteUrl } from "@/lib/site";
 const title = "Nigeria Oil Spill Statistics & Trends";
 const description = "Explore Nigeria oil spill statistics, yearly trends, states, operators and reported causes using SpillFlare’s current NOSDRA source records.";
 
-export const metadata: Metadata = {
-  title,
-  description,
-  alternates: { canonical: "/oil-spills/analytics" },
-  openGraph: { title, description, url: "/oil-spills/analytics" },
-  twitter: { card: "summary", title, description },
-};
+export async function generateMetadata({ searchParams }: { searchParams: Promise<{ year?: string }> }): Promise<Metadata> {
+  const params = await searchParams;
+  return {
+    title, description,
+    alternates: { canonical: "/oil-spills/analytics" },
+    robots: params.year ? { index: false, follow: true } : undefined,
+    openGraph: { title, description, url: "/oil-spills/analytics" },
+    twitter: { card: "summary", title, description },
+  };
+}
 
 function percent(value: number, total: number) {
   return total ? `${Math.round((value / total) * 100)}%` : "0%";
