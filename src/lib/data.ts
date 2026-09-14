@@ -9,6 +9,7 @@ import type {
 } from "@/types/domain";
 import { numberOrNull, spillPath } from "@/lib/format";
 import { parseW3cDate, trustedIncidentLastModified } from "@/lib/sitemap-date";
+import { mergeRuntimeMetadata, type RuntimeMetadata } from "@/lib/runtime-metadata";
 
 const runtimeDataRoot = process.env.SPILLFLARE_DATA_DIR?.trim();
 const snapshotDirectory = runtimeDataRoot
@@ -30,7 +31,22 @@ async function readSnapshot<T>(name: string): Promise<T> {
   return snapshot as Promise<T>;
 }
 
-export const getMetadata = () => readSnapshot<SourceMetadata>("metadata");
+const getSnapshotMetadata = () => readSnapshot<SourceMetadata>("metadata");
+
+export async function getMetadata() {
+  const snapshot = await getSnapshotMetadata();
+  if (!runtimeDataRoot) return snapshot;
+  try {
+    // Deliberately not process-memoized: this is a small operational document,
+    // unlike the 15 MB immutable spill snapshot cached above.
+    const runtime = JSON.parse(
+      await readFile(join(runtimeDataRoot, "runtime-metadata.json"), "utf8"),
+    ) as RuntimeMetadata;
+    return mergeRuntimeMetadata(snapshot, runtime);
+  } catch {
+    return snapshot;
+  }
+}
 
 export async function getRefreshStatus() {
   if (!runtimeDataRoot) return null;

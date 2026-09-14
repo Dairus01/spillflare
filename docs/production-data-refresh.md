@@ -2,6 +2,12 @@
 
 Production reads immutable snapshot releases through `/var/lib/spillflare/current`. The `current` symlink is replaced atomically only after every candidate file has parsed and passed conservative structure/count checks. Failed sources retain their previous file and are reported as degraded. The Git checkout remains read-only to the refresh process.
 
+`runtime-metadata.json` is the small, atomically replaced freshness document.
+Its `retrievedAt` advances after every successful validated source check,
+including `NO_CHANGE`. Snapshot identity and `lastDataChangeAt` advance only
+when content changes, so no-change checks do not duplicate a release or reload
+PM2.
+
 The application must have both variables in `.env.production.local`:
 
 ```dotenv

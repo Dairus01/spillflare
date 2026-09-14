@@ -10,6 +10,7 @@ const root = path.resolve(process.env.SPILLFLARE_DATA_DIR || "/var/lib/spillflar
 const releases = path.join(root, "releases");
 const currentLink = path.join(root, "current");
 const statusFile = path.join(root, "status.json");
+const runtimeMetadataFile = path.join(root, "runtime-metadata.json");
 const lockFile = path.join(root, "refresh.lock");
 const fixtureDir = process.env.SPILLFLARE_SOURCE_FIXTURE_DIR;
 const skipHooks = process.env.SPILLFLARE_SKIP_RELOAD === "1";
@@ -38,6 +39,7 @@ const outputName = (key) => key === "spillsMirror" ? null : `${key}.json`;
 const digest = (value) => createHash("sha256").update(JSON.stringify(value)).digest("hex");
 const count = (value) => Array.isArray(value) ? value.length : Array.isArray(value?.features) ? value.features.length : 0;
 const latestObservation = (key, value) => !Array.isArray(value) ? null : value.map((row) => typeof row?.[key.startsWith("spills") ? "incidentdate" : "month"] === "string" ? row[key.startsWith("spills") ? "incidentdate" : "month"] : "").filter((item) => /^\d{4}-\d{2}(?:-\d{2})?$/.test(item)).sort().at(-1) ?? null;
+const aggregateHash = (sourceStatus) => digest(Object.fromEntries(Object.entries(sourceStatus).filter(([key]) => outputName(key)).map(([key, value]) => [key, value.sha256 ?? null]).sort(([a], [b]) => a.localeCompare(b))));
 
 async function atomicJson(file, value) {
   const temporary = `${file}.${randomUUID()}.tmp`;
@@ -47,6 +49,10 @@ async function atomicJson(file, value) {
 
 async function priorStatus() {
   try { return JSON.parse(await readFile(statusFile, "utf8")); } catch { return {}; }
+}
+
+async function priorRuntimeMetadata(fallback) {
+  try { return JSON.parse(await readFile(runtimeMetadataFile, "utf8")); } catch { return fallback; }
 }
 
 async function setStatus(update) {
@@ -111,8 +117,18 @@ function rowDelta(oldRows, newRows) {
   };
 }
 
+async function revalidateApplication(mode = "data") {
+  if (skipHooks) return { revalidationRequested: true, revalidated: false };
+  const token = process.env.SPILLFLARE_REVALIDATE_TOKEN;
+  if (!token) throw new Error("SPILLFLARE_REVALIDATE_TOKEN is not configured");
+  const suffix = mode === "metadata" ? "?mode=metadata" : "";
+  const response = await fetch(`http://127.0.0.1:3000/api/internal/revalidate-data${suffix}`, { method: "POST", headers: { "x-spillflare-revalidate-token": token }, signal: AbortSignal.timeout(10_000) });
+  if (!response.ok) throw new Error(`route-cache invalidation failed with HTTP ${response.status}`);
+  return { revalidationRequested: true, revalidated: true };
+}
+
 async function synchronizeApplication() {
-  if (skipHooks) return { pm2Reload: false, revalidated: false, indexNow: false };
+  if (skipHooks) return { pm2ReloadRequested: true, pm2Reload: false, revalidationRequested: true, revalidated: false, indexNowRequested: true, indexNow: false };
   await exec("pm2", ["reload", "spillflare", "--update-env"], { cwd: process.cwd() });
   let healthy = false;
   for (let attempt = 0; attempt < 20; attempt += 1) {
@@ -120,16 +136,13 @@ async function synchronizeApplication() {
     await new Promise((resolve) => setTimeout(resolve, 500));
   }
   if (!healthy) throw new Error("PM2 reloaded but the local health check failed");
-  const token = process.env.SPILLFLARE_REVALIDATE_TOKEN;
-  if (!token) throw new Error("SPILLFLARE_REVALIDATE_TOKEN is not configured");
-  const revalidated = await fetch("http://127.0.0.1:3000/api/internal/revalidate-data", { method: "POST", headers: { "x-spillflare-revalidate-token": token }, signal: AbortSignal.timeout(10_000) });
-  if (!revalidated.ok) throw new Error(`route-cache invalidation failed with HTTP ${revalidated.status}`);
+  const revalidation = await revalidateApplication();
   let indexNow = false;
   try {
     await exec(process.execPath, [path.join(process.cwd(), "scripts", "submit-indexnow.mjs")], { cwd: process.cwd(), env: { ...process.env, INDEXNOW_MANIFEST: path.join(root, "indexnow-changes.json") } });
     indexNow = true;
   } catch {}
-  return { pm2Reload: true, revalidated: true, indexNow };
+  return { pm2ReloadRequested: true, pm2Reload: true, ...revalidation, indexNowRequested: true, indexNow };
 }
 
 async function pruneReleases(keep = 12) {
@@ -164,6 +177,7 @@ try {
   await ensureBootstrap();
   const previousDirectory = await readlink(currentLink).then((target) => path.resolve(root, target));
   const previousMetadata = JSON.parse(await readFile(path.join(previousDirectory, "metadata.json"), "utf8"));
+  const previousRuntimeMetadata = await priorRuntimeMetadata(previousMetadata);
   const previousSpills = JSON.parse(await readFile(path.join(previousDirectory, "spillsPrimary.json"), "utf8"));
   const previousHashes = new Map();
   for (const key of Object.keys(sources)) {
@@ -186,20 +200,37 @@ try {
       sourceStatus[key] = { url, status: "healthy", retrievedAt: checkedAt, checkedAt, sha256: digest(result.value.value), count: count(result.value.value), latestObservation: latestObservation(key, result.value.value) };
     } catch (error) {
       failures.push(`${key}: ${error.message}`);
-      sourceStatus[key] = { ...previousMetadata.sources?.[key], url, status: "degraded", checkedAt, error: error.message, servingLastSuccessfulSnapshot: true };
+      sourceStatus[key] = { ...previousRuntimeMetadata.sources?.[key], url, status: "degraded", checkedAt, error: error.message, servingLastSuccessfulSnapshot: true };
     }
   }
   if (accepted.has("spillsPrimary") && accepted.has("spillsMirror") && digest(accepted.get("spillsPrimary")) !== digest(accepted.get("spillsMirror"))) {
     failures.push("spillsMirror: fingerprint differs from primary");
     accepted.delete("spillsMirror");
-    sourceStatus.spillsMirror = { ...previousMetadata.sources.spillsMirror, status: "degraded", checkedAt, error: "fingerprint differs from primary", servingLastSuccessfulSnapshot: true };
+    sourceStatus.spillsMirror = { ...previousRuntimeMetadata.sources.spillsMirror, status: "degraded", checkedAt, error: "fingerprint differs from primary", servingLastSuccessfulSnapshot: true };
   }
   const changedKeys = [...accepted.keys()].filter((key) => outputName(key) && sourceStatus[key].sha256 !== previousHashes.get(key));
   const status = await priorStatus();
+  const successfulRetrieval = accepted.size > 0;
+  const retrievedAt = successfulRetrieval ? checkedAt : previousRuntimeMetadata.retrievedAt;
+  const runtimeMetadata = {
+    retrievedAt,
+    snapshotCreatedAt: previousRuntimeMetadata.snapshotCreatedAt ?? previousMetadata.retrievedAt,
+    lastDataChangeAt: previousRuntimeMetadata.lastDataChangeAt ?? previousMetadata.retrievedAt,
+    contentHash: aggregateHash(sourceStatus),
+    sources: sourceStatus,
+    spillMirrorAgreement: sourceStatus.spillsPrimary?.sha256 === sourceStatus.spillsMirror?.sha256,
+  };
   if (!changedKeys.length) {
-    const hooks = status.applicationSynchronized === false ? await synchronizeApplication() : { pm2Reload: false, revalidated: false, indexNow: false };
-    await setStatus({ lastCheckAt: checkedAt, lastResult: failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE", failures, sources: sourceStatus, applicationSynchronized: true, ...hooks });
-    console.log(`${failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE"} sources_healthy=${accepted.size}/${Object.keys(sources).length} sources_degraded=${failures.length} spill_records=${previousSpills.length} pm2_reload=${hooks.pm2Reload} duration_seconds=${((Date.now() - started) / 1000).toFixed(2)}`);
+    if (successfulRetrieval) await atomicJson(runtimeMetadataFile, runtimeMetadata);
+    let hooks = { pm2ReloadRequested: false, pm2Reload: false, revalidationRequested: false, revalidated: false, indexNowRequested: false, indexNow: false };
+    let revalidationError;
+    if (status.applicationSynchronized === false) {
+      hooks = await synchronizeApplication();
+    } else if (successfulRetrieval) {
+      try { hooks = { ...hooks, ...(await revalidateApplication("metadata")) }; } catch (error) { revalidationError = error.message; }
+    }
+    await setStatus({ lastCheckAt: checkedAt, ...(successfulRetrieval ? { lastSuccessfulRefresh: retrievedAt } : {}), lastResult: failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE", failures, sources: sourceStatus, contentHash: runtimeMetadata.contentHash, retrievedAt, applicationSynchronized: true, revalidationError: revalidationError ?? null, ...hooks });
+    console.log(`${failures.length ? "NO_CHANGE_WITH_DEGRADED_SOURCES" : "NO_CHANGE"} sources_healthy=${accepted.size}/${Object.keys(sources).length} sources_degraded=${failures.length} spill_records=${previousSpills.length} content_hash_same=true retrieved_at=${retrievedAt} pm2_reload=${hooks.pm2Reload} duration_seconds=${((Date.now() - started) / 1000).toFixed(2)}`);
     await lock.close();
     lock = undefined;
     await unlink(lockFile).catch(() => {});
@@ -212,7 +243,8 @@ try {
   for (const key of changedKeys) await atomicJson(path.join(staging, outputName(key)), accepted.get(key));
   const nextSpills = accepted.get("spillsPrimary") ?? previousSpills;
   const delta = rowDelta(previousSpills, nextSpills);
-  const metadata = { retrievedAt: checkedAt, sources: sourceStatus, spillMirrorAgreement: sourceStatus.spillsPrimary?.sha256 === sourceStatus.spillsMirror?.sha256 };
+  const contentHash = aggregateHash(sourceStatus);
+  const metadata = { retrievedAt: checkedAt, snapshotCreatedAt: checkedAt, lastDataChangeAt: checkedAt, contentHash, sources: sourceStatus, spillMirrorAgreement: sourceStatus.spillsPrimary?.sha256 === sourceStatus.spillsMirror?.sha256 };
   await atomicJson(path.join(staging, "metadata.json"), metadata);
   const release = path.join(releases, releaseId);
   await rename(staging, release);
@@ -220,11 +252,12 @@ try {
   const nextLink = path.join(root, `.current-${randomUUID()}`);
   await symlink(path.relative(root, release), nextLink, process.platform === "win32" ? "junction" : "dir");
   await activateLink(nextLink);
+  await atomicJson(runtimeMetadataFile, metadata);
   const changedPaths = [...delta.added, ...delta.changed, ...delta.removed].map((id) => `/oil-spills/${id}`);
   const sitemapYears = [...new Set([...delta.added, ...delta.changed].map((id) => nextSpills.find((row) => String(row.id) === id)?.incidentdate?.slice(0, 4)).filter(Boolean))];
   const hubs = ["/", "/explore", "/oil-spills", "/oil-spills/archive", "/oil-spills/analytics", "/oil-spills/causes", "/oil-spills/niger-delta", "/gas-flares", "/gas-flares/companies", "/places", "/sitemap.xml", ...sitemapYears.map((year) => `/sitemaps/incidents-${year}.xml`)];
   await atomicJson(path.join(root, "indexnow-changes.json"), { generatedAt: checkedAt, paths: [...new Set(changedPaths.concat(hubs))] });
-  await setStatus({ lastCheckAt: checkedAt, lastSuccessfulRefresh: checkedAt, lastResult: "DATA_PROMOTED", changedSources: changedKeys, failures, sources: sourceStatus, oldSpillCount: previousSpills.length, newSpillCount: nextSpills.length, added: delta.added.length, changed: delta.changed.length, removed: delta.removed.length, currentRelease: releaseId, applicationSynchronized: false });
+  await setStatus({ lastCheckAt: checkedAt, lastSuccessfulRefresh: checkedAt, lastResult: "DATA_PROMOTED", contentHash, retrievedAt: checkedAt, changedSources: changedKeys, failures, sources: sourceStatus, oldSpillCount: previousSpills.length, newSpillCount: nextSpills.length, added: delta.added.length, changed: delta.changed.length, removed: delta.removed.length, currentRelease: releaseId, applicationSynchronized: false });
   const hooks = await synchronizeApplication();
   const releasesPruned = await pruneReleases();
   await setStatus({ lastResult: "DATA_UPDATED", applicationSynchronized: true, releasesPruned, ...hooks });

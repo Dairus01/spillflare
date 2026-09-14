@@ -21,5 +21,5 @@ export type FlareRow = { name: string; mscf: string | number | null; month: stri
 export type GeoFeature = { type: "Feature"; id?: number | string; geometry: GeoJSON.Geometry; properties: Record<string, string | number | null> };
 export type FeatureCollection = { type: "FeatureCollection"; features: GeoFeature[] };
 export type SourceStatus = { url: string; status: "healthy" | "degraded"; retrievedAt: string; checkedAt?: string; sha256?: string; count?: number; latestObservation?: string | null; error?: string; servingLastSuccessfulSnapshot?: boolean };
-export type SourceMetadata = { retrievedAt: string; sources: Record<string, SourceStatus>; spillMirrorAgreement: boolean };
+export type SourceMetadata = { retrievedAt: string; snapshotCreatedAt?: string; lastDataChangeAt?: string; contentHash?: string; sources: Record<string, SourceStatus>; spillMirrorAgreement: boolean };
 export type MapPoint = { id: string; lat: number; lng: number; title: string; subtitle?: string; kind: "spill" | "flare"; href?: string };

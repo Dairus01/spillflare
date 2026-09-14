@@ -12,6 +12,11 @@ function authorized(request: Request) {
 
 export async function POST(request: Request) {
   if (!authorized(request)) return Response.json({ ok: false }, { status: 401 });
+  const mode = new URL(request.url).searchParams.get("mode");
+  if (mode === "metadata") {
+    revalidatePath("/");
+    return Response.json({ ok: true, mode, revalidatedAt: new Date().toISOString() }, { headers: { "Cache-Control": "no-store" } });
+  }
   // Data affects hubs, archives, incidents, metadata and sitemap membership.
   // Invalidating the layout clears the Full Route Cache without rebuilding.
   revalidatePath("/", "layout");
