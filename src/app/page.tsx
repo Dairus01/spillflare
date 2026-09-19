@@ -186,7 +186,7 @@ export default async function Home() {
                 Explore Nigeria
               </Link>
               <Link className="button secondary" href="/oil-spills">
-                Browse oil-spill records
+                Explore Oil Spills in Nigeria
                 <ArrowRight size={17} />
               </Link>
             </div>
@@ -219,7 +219,7 @@ export default async function Home() {
               <span className="eyebrow">Choose what to explore</span>
               <Link href="/oil-spills">
                 <i className="spill-dot" />
-                Oil-spill records
+                Oil Spills in Nigeria
                 <ArrowRight size={14} />
               </Link>
               <Link href="/gas-flares">
@@ -291,14 +291,14 @@ export default async function Home() {
             eyebrow="Latest oil spill records"
             title="Recent reports from the source"
             body="Dates below are observation dates in the dataset, not the date this website retrieved the data."
-            action={{ label: "See all oil spills", href: "/oil-spills" }}
+            action={{ label: "Explore Oil Spills in Nigeria", href: "/oil-spills" }}
           />
           <div className="panel record-list">
             {latestSpills.slice(0, 5).map((spill) => (
               <Link
                 className="record-row"
                 key={spill.id}
-                href={`/oil-spills/${spill.incidentnumber ?? spill.id}`}
+                href={spillPath(spill.id)}
               >
                 <time>
                   {formatDate(spill.incidentdate, {
