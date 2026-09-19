@@ -224,7 +224,7 @@ export default async function Home() {
               </Link>
               <Link href="/gas-flares">
                 <i className="flare-dot" />
-                Gas-flare estimates
+                Gas Flaring in Nigeria
                 <ArrowRight size={14} />
               </Link>
               <Link href="/places">
@@ -258,7 +258,7 @@ export default async function Home() {
               <div className="card-icon">
                 <Flame size={21} />
               </div>
-              <h3>Where has flaring been detected?</h3>
+              <h3>Explore Gas Flaring in Nigeria</h3>
               <p>
                 Compare state, LGA, cluster, block and onshore/offshore
                 estimates independently.

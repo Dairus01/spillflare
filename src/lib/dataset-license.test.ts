@@ -36,6 +36,7 @@ describe("Dataset licensing", () => {
         .sort(),
     ).toEqual([
       "gas-flares/clusters/[name]/page.tsx",
+      "gas-flares/page.tsx",
       "oil-blocks/[name]/page.tsx",
       "oil-spills/page.tsx",
       "page.tsx",

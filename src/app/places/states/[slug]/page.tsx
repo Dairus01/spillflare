@@ -250,7 +250,7 @@ export default async function StatePage({
           <div className="panel-body prose">
             <p>The SpillFlare profile for {stateName} brings together two separate public datasets: NOSDRA oil spill incident records and monthly state-level estimates from the Nigeria Gas Flare Tracker. The profile currently contains <strong>{formatNumber(stateSpills.length)} oil spill records</strong>{earliestStateSpill && latestStateSpill ? <> dated from {formatDate(earliestStateSpill, { month: "long", year: "numeric" })} to {formatDate(latestStateSpill, { month: "long", year: "numeric" })}</> : null}.</p>
             {topCompanies.length > 0 && <p>Companies appearing most often in the supplied {stateName} spill records include {topCompanies.map((item, index) => <span key={item.name}>{index > 0 ? index === topCompanies.length - 1 ? " and " : ", " : ""}<Link href={`${statePath}?year=all&company=${encodeURIComponent(item.name)}`}>{item.name} ({formatNumber(item.count)})</Link></span>)}. These are record counts, not a finding of legal responsibility.</p>}
-            <p>Browse the incident list below, compare the state&apos;s monthly flare estimates, or continue to the national <Link href="/oil-spills">oil spill tracker</Link> and <Link href="/gas-flares">gas flaring tracker</Link>.</p>
+            <p>Browse the incident list below, compare the state&apos;s monthly flare estimates, or continue to the national <Link href="/oil-spills">oil spill tracker</Link> and <Link href="/gas-flares">Gas Flaring in Nigeria</Link> data explorer.</p>
           </div>
         </section>
 

@@ -5,25 +5,42 @@ import { ExportLink } from "@/components/export-link";
 import { FlareTrend } from "@/components/flare-chart";
 import { NigeriaMap } from "@/components/map";
 import { DataNote, Metric, SourceRail } from "@/components/ui";
-import { flarePeriod, getFlareRows, getMetadata } from "@/lib/data";
-import { formatNumber, formatVolume, numberOrNull, titleCase } from "@/lib/format";
+import { getFlareRows, getMetadata } from "@/lib/data";
+import { formatDate, formatNumber, formatVolume, numberOrNull, slugify, titleCase } from "@/lib/format";
+import { datasetLicense, siteUrl } from "@/lib/site";
 import type { MapPoint } from "@/types/domain";
+
+const title = "Gas Flaring in Nigeria: Tracker, Map & Data | SpillFlare";
+const openGraphTitle = "Gas Flaring in Nigeria: Tracker, Map & Data";
+const description = "Explore gas flaring in Nigeria using monthly estimates by state, LGA, cluster and oil block, with interactive maps, trends and downloadable data.";
 
 export async function generateMetadata({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }): Promise<Metadata> {
   const params = await searchParams;
   return {
-    title: "Nigeria Gas Flaring Tracker, Map & Data",
-    description: "Explore gas flaring in Nigeria by state, LGA, cluster and oil block using monthly tracker estimates, interactive maps and source-backed data.",
+    title: { absolute: title },
+    description,
     alternates: { canonical: "/gas-flares" },
     robots: Object.keys(params).length ? { index: false, follow: true } : undefined,
     openGraph: {
-      title: "Nigeria Gas Flaring Tracker, Map & Data",
-      description: "Compare monthly gas flare estimates across Nigerian states, LGAs, clusters and oil blocks.",
+      title: openGraphTitle,
+      description,
       url: "/gas-flares",
     },
+    twitter: { card: "summary", title: openGraphTitle, description },
   };
 }
 const validAreas = ["state", "lga", "cluster", "block", "onshore_offshore"] as const;
+const areaOptions: Record<typeof validAreas[number], string> = {
+  state: "Gas flaring by state",
+  lga: "Gas flaring by LGA",
+  cluster: "Gas flaring by cluster",
+  block: "Gas flaring by oil block",
+  onshore_offshore: "Onshore/offshore gas flaring",
+};
+
+function firstValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
 
 export default async function GasFlaresPage({
   searchParams,
@@ -31,18 +48,26 @@ export default async function GasFlaresPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const requested = String(params.area ?? "state");
+  const requested = firstValue(params.area) ?? "state";
   const area = validAreas.includes(requested as typeof validAreas[number])
     ? requested as typeof validAreas[number]
     : "state";
-  const period = String(params.period ?? "2026-05");
-  const query = String(params.q ?? "").toLowerCase();
-  const requestedPage = Number(params.page ?? "1");
-  const [rows, allRows, metadata] = await Promise.all([
-    flarePeriod(area, period),
+  const metadataKey = `flare${area === "lga" ? "Lga" : area === "onshore_offshore" ? "OnshoreOffshore" : area[0].toUpperCase() + area.slice(1)}`;
+  const [allRows, metadata] = await Promise.all([
     getFlareRows(area),
     getMetadata(),
   ]);
+  const periodRows = allRows.filter((row) => row.month && numberOrNull(row.mscf) !== null);
+  const months = [...new Set(periodRows.map((row) => row.month as string))].sort();
+  const latestPeriod = months.at(-1) ?? metadata.sources[metadataKey]?.latestObservation ?? "";
+  const requestedPeriod = firstValue(params.period);
+  const period = requestedPeriod && months.includes(requestedPeriod) ? requestedPeriod : latestPeriod;
+  const rows = periodRows
+    .filter((row) => row.month === period)
+    .sort((a, b) => (numberOrNull(b.mscf) ?? 0) - (numberOrNull(a.mscf) ?? 0));
+  const queryValue = firstValue(params.q) ?? "";
+  const query = queryValue.toLowerCase();
+  const requestedPage = Number(firstValue(params.page) ?? "1");
   const filtered = rows.filter((row) => !query || row.name.toLowerCase().includes(query));
   const pageSize = 12;
   const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
@@ -71,11 +96,12 @@ export default async function GasFlaresPage({
             ? `/gas-flares/clusters/${row.name}`
             : area === "block"
               ? `/oil-blocks/${row.name.toLowerCase().replace(/\s+/g, "-")}`
+              : area === "state"
+                ? `/places/states/${slugify(row.name)}`
               : undefined,
         }]
       : [];
   });
-  const periodRows = allRows.filter((row) => row.month && numberOrNull(row.mscf) !== null);
   const monthTotals = new Map<string, number>();
   for (const row of periodRows) {
     monthTotals.set(row.month!, (monthTotals.get(row.month!) ?? 0) + (numberOrNull(row.mscf) ?? 0));
@@ -85,17 +111,27 @@ export default async function GasFlaresPage({
     .slice(-18)
     .map(([month, value]) => ({ month: month.slice(2), value }));
   const total = filtered.reduce((sum, row) => sum + (numberOrNull(row.mscf) ?? 0), 0);
-  const metadataKey = `flare${area === "lga" ? "Lga" : area === "onshore_offshore" ? "OnshoreOffshore" : area[0].toUpperCase() + area.slice(1)}`;
+  const latestCoverage = metadata.sources[metadataKey]?.latestObservation ?? latestPeriod;
+  const companyCoverage = metadata.sources.flareCompany?.latestObservation;
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "CollectionPage", "@id": `${siteUrl}/gas-flares#webpage`, url: `${siteUrl}/gas-flares`, name: title, description, isPartOf: { "@id": `${siteUrl}/#website` }, about: { "@type": "Thing", name: "Gas flaring in Nigeria" } },
+      { "@type": "Dataset", "@id": `${siteUrl}/gas-flares#dataset`, name: "Nigeria Gas Flaring Dataset", description: "Monthly Nigeria Gas Flare Tracker estimates organised by state, LGA, flare cluster, oil block and onshore/offshore aggregation.", url: `${siteUrl}/gas-flares`, spatialCoverage: { "@type": "Place", name: "Nigeria" }, temporalCoverage: months.length ? `${months[0]}/${months.at(-1)}` : undefined, isBasedOn: metadata.sources[metadataKey]?.url, publisher: { "@id": `${siteUrl}/#organization` }, isAccessibleForFree: true, ...datasetLicense, dateModified: metadata.retrievedAt, variableMeasured: ["Monthly gas flare estimate", "Geographic aggregation", "Source area name"], distribution: { "@type": "DataDownload", encodingFormat: "text/csv", contentUrl: `${siteUrl}/api/export?dataset=flares` } },
+      { "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "Home", item: siteUrl }, { "@type": "ListItem", position: 2, name: "Gas Flaring in Nigeria", item: `${siteUrl}/gas-flares` }] },
+    ],
+  };
 
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData).replace(/</g, "\\u003c") }} />
       <section className="page-hero">
         <div className="container">
           <span className="eyebrow">Nigeria Gas Flare Tracker</span>
-          <h1>Nigeria Gas Flaring Tracker</h1>
-          <p>Explore monthly gas flare estimates across Nigeria and compare detected flaring within one geographic level at a time. States, LGAs, clusters and oil blocks remain distinct.</p>
+          <h1>Gas Flaring in Nigeria</h1>
+          <p>Explore monthly gas flare estimates across Nigeria by state, LGA, flare cluster and oil block. Compare detected flaring within one geographic level at a time, inspect recent trends and export source-backed data with dates and limitations visible.</p>
           <div className="button-row">
-            <Link className="button secondary" href="/gas-flares/companies"><Building2 size={17} />Historical company data</Link>
+            <Link className="button secondary" href="/gas-flares/companies"><Building2 size={17} />Historical gas flaring by company</Link>
           </div>
         </div>
       </section>
@@ -104,20 +140,20 @@ export default async function GasFlaresPage({
         <form className="filter-bar">
           <div className="filter-group">
             <label htmlFor="area">Geographic level</label>
-            <select id="area" name="area" defaultValue={area}>{validAreas.map((item) => <option key={item} value={item}>{titleCase(item)}</option>)}</select>
+            <select id="area" name="area" defaultValue={area}>{validAreas.map((item) => <option key={item} value={item}>{areaOptions[item]}</option>)}</select>
           </div>
           <div className="filter-group">
             <label htmlFor="period">Month</label>
-            <input id="period" name="period" type="month" defaultValue={period} min="2012-03" max="2026-05" />
+            <input id="period" name="period" type="month" defaultValue={period} min={months[0]} max={latestPeriod} />
           </div>
           <div className="filter-group">
             <label htmlFor="flare-search">Find within results</label>
-            <input id="flare-search" name="q" defaultValue={String(params.q ?? "")} placeholder="Name" />
+            <input id="flare-search" name="q" defaultValue={queryValue} placeholder="Name" />
           </div>
           <button className="button"><Search size={16} />Apply</button>
           <div className="filter-spacer" />
-          <Link className="button ghost" href="/gas-flares/companies"><Building2 size={16} />Company history</Link>
-          <ExportLink href={`/api/export?dataset=flares&area=${area}&period=${period}`} />
+          <Link className="button ghost" href="/gas-flares/companies"><Building2 size={16} />Historical company flaring</Link>
+          <ExportLink href={`/api/export?dataset=flares&area=${area}&period=${period}`} label="Export gas flare data as CSV" />
         </form>
         <DataNote>
           {filtered.length > 0
@@ -128,14 +164,14 @@ export default async function GasFlaresPage({
           <Metric label="Selected geography" value={titleCase(area)} detail="Not combined with other levels" />
           <Metric label="Areas with values" value={formatNumber(filtered.length)} detail={period} />
           <Metric label="Tracker volume" value={formatVolume(total)} detail="Sum of visible rows" />
-          <Metric label="Latest coverage" value="May 2026" detail="Company view ends Oct 2020" />
+          <Metric label="Latest coverage" value={formatDate(latestCoverage, { month: "long", year: "numeric" })} detail={companyCoverage ? `Company view ends ${formatDate(companyCoverage, { month: "short", year: "numeric" })}` : "Company coverage shown separately"} />
         </div>
         <div className="split">
           <NigeriaMap points={points} height={610} center={[6.2, 5.8]} zoom={7} />
           <div className="panel">
-            <div className="panel-head"><h2>Largest reported values</h2><span className="mono">{period}</span></div>
+            <div className="panel-head"><h2>Largest reported gas flare values</h2><span className="mono">{period}</span></div>
             <div className="record-list">
-              {visibleRows.map((row, index) => <Link className="record-row" key={row.name} href={area === "cluster" ? `/gas-flares/clusters/${row.name}` : area === "block" ? `/oil-blocks/${row.name.toLowerCase().replace(/\s+/g, "-")}` : `/search?q=${encodeURIComponent(row.name)}`}><time>#{String((page - 1) * pageSize + index + 1).padStart(2, "0")}</time><div><strong>{row.name}</strong><p>{formatVolume(row.mscf)}</p></div><span className="status warning"><Flame size={12} />Detected</span></Link>)}
+              {visibleRows.map((row, index) => <Link className="record-row" key={row.name} href={area === "cluster" ? `/gas-flares/clusters/${row.name}` : area === "block" ? `/oil-blocks/${row.name.toLowerCase().replace(/\s+/g, "-")}` : area === "state" ? `/places/states/${slugify(row.name)}` : `/search?q=${encodeURIComponent(row.name)}`}><time>#{String((page - 1) * pageSize + index + 1).padStart(2, "0")}</time><div><strong>{area === "state" ? `Gas flaring in ${row.name} State` : row.name}</strong><p>{formatVolume(row.mscf)}</p></div><span className="status warning"><Flame size={12} />Detected</span></Link>)}
             </div>
             <div className="flare-pagination" aria-label="Cluster pagination">
               <span>Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filtered.length)} of {filtered.length}</span>
@@ -147,7 +183,7 @@ export default async function GasFlaresPage({
           </div>
         </div>
         <div className="panel" style={{ marginTop: 22 }}>
-          <div className="panel-head"><h2>Recent national trend for this aggregation</h2><span className="mono">Values are summed within {titleCase(area)}</span></div>
+          <div className="panel-head"><h2>Recent Nigeria gas flare trend for this aggregation</h2><span className="mono">Values are summed within {titleCase(area)} only</span></div>
           <div className="panel-body"><FlareTrend data={trend} /></div>
         </div>
       </div>
